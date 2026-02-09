@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="BioDCASE_header_dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="BioDCASE_header_light.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="BioDCASE_header_light.svg">
+    <source media="(prefers-color-scheme: light)" srcset="BioDCASE_header_dark.svg">
     <img src="BioDCASE_header_dark.svg" alt="BioDCASE Logo" width="600">
   </picture>
   
