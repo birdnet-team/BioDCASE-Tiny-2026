@@ -1,0 +1,7 @@
+dependencies:
+  espressif/esp-dsp:
+    git: https://github.com/espressif/esp-dsp.git
+    version: 1668188ad2f8fb5b7e6d3bf6868a6dd91345823c
+  esp-tflite-micro:
+    git: https://github.com/espressif/esp-tflite-micro.git
+    version: 416d3713e9312025df434d6f33600ec490705b3d

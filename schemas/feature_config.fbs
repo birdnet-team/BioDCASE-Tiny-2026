@@ -1,0 +1,24 @@
+namespace FeatureConfigs;
+
+table FilterbankConfig {
+  fft_start_idx:uint32;
+  fft_end_idx:uint32;
+  weights:[int16];
+  unweights:[int16];
+  num_channels:int32;
+  channel_frequency_starts:[int16];
+  channel_weight_starts:[int16];
+  channel_widths:[int16];
+}
+
+table FeatureConfig {
+  hanning_window:[int16];
+  window_scaling_bits:uint8;
+  fft_twiddle:[int16];
+  fb_config:FilterbankConfig;
+  mel_range_min:int32;
+  mel_range_max:int32;
+  mel_post_scaling_bits:uint8;
+}
+
+root_type FeatureConfig;

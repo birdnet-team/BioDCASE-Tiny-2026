@@ -1,0 +1,13 @@
+{
+  "name": "esp-tflite-biodcase-idf-v5.2",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile",
+    "args": {
+      "IDF_TAG": "v5.2",
+    },
+  },
+  "overrideCommand": false,
+  "privileged": true,
+  "workspaceMount": "source=${localWorkspaceFolder},target=/project,type=bind,consistency=cached",
+  "workspaceFolder": "/project"
+}

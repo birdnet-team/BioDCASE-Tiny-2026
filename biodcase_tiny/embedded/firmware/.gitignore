@@ -1,0 +1,15 @@
+build
+cmake-build-debug
+managed_components
+sdkconfig
+sdkconfig.old
+dependencies.lock
+*.old
+*.o
+*.s
+.DS_Store
+.idea
+*.orig
+*.swp
+*.out
+*.lock

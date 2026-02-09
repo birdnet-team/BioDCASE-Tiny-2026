@@ -1,0 +1,20 @@
+data_preprocessing:
+  audio_slice_duration_ms: 2000
+  sample_rate: 16000
+feature_extraction:
+  window_len: 4096
+  window_stride: 512
+  window_scaling_bits: 12
+  mel_n_channels: 40
+  mel_low_hz: 125
+  mel_high_hz: 7500
+  mel_post_scaling_bits: 6
+model_training:
+  seed: 42
+  n_epochs: 20
+  shuffle_buff_n: 10000
+  batch_size: 128
+  early_stopping:
+    patience: 0
+embedded_code_generation:
+  serial_device: "/dev/ttyUSB0" # Replace with your serial device
