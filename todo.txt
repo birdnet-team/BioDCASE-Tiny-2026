@@ -1,0 +1,8 @@
+# --
+# todos for biodcase 2026 task3 - tiny ml
+
+- run old system on new data 10 bird classes + 1 background class
+- should we make the background class as output class or work with 10 classes and thresholds?
+- pytorch integration
+- test submission - python code or github actions?
+- emulator: quemu?
