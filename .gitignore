@@ -10,6 +10,6 @@
 
 __pycache__
 
-biodcase_tiny/embedded/firmware/main/feature_config_generated.h
+#biodcase_tiny/embedded/firmware/main/feature_config_generated.h
 biodcase_tiny/feature_extraction/FeatureConfig.py
 biodcase_tiny/feature_extraction/FilterbankConfig.py
