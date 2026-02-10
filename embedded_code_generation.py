@@ -63,21 +63,31 @@ def generate_and_flash(config: Config, target: ESPTarget, gen_code_dir: Path):
     toolchain.monitor(src_path=src_path)
 
 
-def run_embedded_code_generation(
-    config: Config,
-    model_path: Path = KERAS_MODEL_PATH,
-    reference_dataset_path: Path = REFERENCE_DATASET_PATH,
-    tflite_model_path: Path = TFLITE_MODEL_PATH,
-    gen_code_dir: Path = GEN_CODE_DIR,
-    quantize: bool = False,
-):
+def run_embedded_code_generation(config: Config, model_path: Path = KERAS_MODEL_PATH, reference_dataset_path: Path = REFERENCE_DATASET_PATH, tflite_model_path: Path = TFLITE_MODEL_PATH, gen_code_dir: Path = GEN_CODE_DIR, quantize: bool = False):
+    """
+    embedded code generation
+    """
+
+    # create directory
+    if not gen_code_dir.is_dir(): gen_code_dir.mkdir()
+
+    # target
     target = create_target(model_path, reference_dataset_path, config, quantize)
     tflite_model_buf = target.get_model_buf()
     with tflite_model_path.open("wb") as f:
         f.write(tflite_model_buf)
+
+    # generate and flash
     generate_and_flash(config, target, gen_code_dir)
 
 
 if __name__ == '__main__':
+    """
+    embedded code generation
+    """
+
+    # config
     config = load_config()
+
+    # run embedded code generation
     run_embedded_code_generation(config)
