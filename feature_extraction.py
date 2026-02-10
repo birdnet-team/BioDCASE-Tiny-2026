@@ -2,6 +2,7 @@ import json
 from functools import partial
 import faulthandler
 
+import yaml
 import dask
 import dask.dataframe as dd
 import numpy as np
@@ -18,17 +19,18 @@ from paths import PREPROC_PRQ_PATH, FEATURES_PRQ_PATH, FEATURES_SAMPLE_PLOT_PATH
 
 
 def plot_features_sample(sample: pd.DataFrame, features_shape):
-    """Plot a few samples of features
     """
+    Plot a few samples of features
+    """
+
+    # min, max frequency
     fmin = sample["features"].apply(lambda x: x.min()).min()
     fmax = sample["features"].apply(lambda x: x.max()).max()
 
-    fig = make_subplots(
-        rows=len(sample) + 1,
-        cols=2,
-        vertical_spacing=0.05,
-        subplot_titles=[x.split("/")[-1] for x in list(sample["path"]) for _ in range(2)],
-    )
+    # subplots
+    fig = make_subplots(rows=len(sample) + 1, cols=2, vertical_spacing=0.05, subplot_titles=[x.split("/")[-1] for x in list(sample["path"]) for _ in range(2)],)
+
+    # add traces
     for i, (idx, row) in enumerate(sample.iterrows()):
         path, audio_data, sample_rate = row["path"], row["data"], row["sample_rate"]
         fig.add_trace(
@@ -70,16 +72,24 @@ def apply_windowed(data, window_len, window_stride, fn):
     return np.array(outs)
 
 
-def run_feature_extraction(
-        config: Config,
-        preproc_prq_path=PREPROC_PRQ_PATH,
-        features_prq_path=FEATURES_PRQ_PATH,
-        features_sample_plot_path=FEATURES_SAMPLE_PLOT_PATH,
-        features_shape_json_path=FEATURES_SHAPE_JSON_PATH,
-):
+def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, features_prq_path=FEATURES_PRQ_PATH, features_sample_plot_path=FEATURES_SAMPLE_PLOT_PATH, features_shape_json_path=FEATURES_SHAPE_JSON_PATH,):
+    """
+    ferature extraction
+    """
+
+    # fault handler?
     faulthandler.enable()
+
+    # dask config
     dask.config.set({"dataframe.convert-string": False})
+
+    # data extraction
     data = dd.read_parquet(preproc_prq_path)
+
+    # read and save yaml of class dict also to feature extraction
+    yaml.dump(yaml.safe_load(open(preproc_prq_path.parent / 'class_dict.yaml')), open(features_prq_path.parent / 'class_dict.yaml', 'w'))
+
+    # feature extraction config
     fe_config = config.feature_extraction
     dp_config = config.data_preprocessing
     fc = make_constants(
@@ -109,11 +119,13 @@ def run_feature_extraction(
 
     features_example = do_windows_fn(data["data"].head(1)[0])
     features_shape = features_example.shape
+
+    # extract partitions
     with TqdmCallback(desc="Extracting features from preprocessed data"):
+
+        # data processing
         data = data.map_partitions(
-            lambda df: df.assign(features=df["data"].apply(
-                lambda clip: do_windows_fn(clip).flatten(),
-            )),
+            lambda df: df.assign(features=df["data"].apply(lambda clip: do_windows_fn(clip).flatten(),)),
             meta=pd.DataFrame(
                 dict(
                     **{c: data._meta[c] for c in data._meta},
@@ -126,9 +138,8 @@ def run_feature_extraction(
         data: dd.DataFrame = data.drop("data", axis=1)  # remove original audio
         data.to_parquet(
             features_prq_path,
-            schema={
-                'features': pa.list_(pa.float32())   # make sure array is serialized correctly
-            },
+            # make sure array is serialized correctly
+            schema={'features': pa.list_(pa.float32())},
             write_index=False,
         )
     features_sample_fig.write_image(features_sample_plot_path)
@@ -137,5 +148,12 @@ def run_feature_extraction(
 
 
 if __name__ == "__main__":
+    """
+    feature extraction
+    """
+
+    # config
     config = load_config()
+
+    # run feature extraction
     run_feature_extraction(config)

@@ -1,14 +1,33 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="BioDCASE_header_light.svg">
-    <source media="(prefers-color-scheme: light)" srcset="BioDCASE_header_dark.svg">
-    <img src="BioDCASE_header_dark.svg" alt="BioDCASE Logo" width="600">
+    <img src="docs/under_construction.png" alt="Under construction" width="200">
   </picture>
-  
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/BioDCASE_header_light.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/BioDCASE_header_dark.svg">
+    <img src="docs/BioDCASE_header_dark.svg" alt="BioDCASE Logo" width="600">
+  </picture>
+  <picture>
+    <img src="docs/under_construction.png" alt="Under construction" width="200">
+  </picture>
   <br><br>
 </div>
 
+<!-- <div align="center">
+  <picture>
+    <img src="docs/under_construction.png" alt="Under construction" width="300">
+  </picture>
+  <br><br>
+</div> -->
+
 This repository contains the development framework for the **BioDCASE-Tiny 2026 competition (Task 3)**, focusing on TinyML implementation for bird species recognition on the ESP32-S3-Korvo-2 development board.
+
+<div align="center">
+  <picture>
+    <img src="docs/BioDCASE_Tiny_Dev_Board.jpg" alt="ESP32-S3-Korvo-2 development board" width="400">
+  </picture>
+  <br><br>
+</div>
 
 For complete competition details, visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3).
 
