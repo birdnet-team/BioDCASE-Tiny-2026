@@ -10,6 +10,7 @@ import dask.dataframe as dd
 import dask
 from tqdm.dask import TqdmCallback
 import pyarrow as pa
+import soundfile
 
 from config import load_config, Config
 from paths import CLIPS_DIR, PREPROC_PRQ_PATH
@@ -68,10 +69,10 @@ def run_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path=PREP
             # todo: resample all to specific fs
             # load audio
             #audio_array, sample_rate = librosa.load(path, sr=config.data_preprocessing.sample_rate, mono=True)
-            audio_array, sample_rate = librosa.load(path, mono=True)
+            audio_array, sample_rate = librosa.load(path, sr=None, mono=True)
 
             # info
-            #print("path: ", path), print("fs: ", sample_rate), print("class: ", actual_class_dict[path.parent.name]), print("split: ", SPLIT_FOLDER_TO_SPLIT.get(path.parents[1].name, None))
+            #print("path: ", Path(path).name), print("fs: ", sample_rate), print("class: ", actual_class_dict[path.parent.name]), print("split: ", SPLIT_FOLDER_TO_SPLIT.get(path.parents[1].name, None)), print("soundfile: ", soundfile.info(path))
 
             audio_array_int16 = (audio_array * np.iinfo(np.int16).max).astype(np.int16)
             audio_slice = extract_loudest_slice(audio_array_int16, sample_rate, config.data_preprocessing.audio_slice_duration_ms)

@@ -22,13 +22,6 @@
 
 This repository contains the development framework for the **BioDCASE-Tiny 2026 competition (Task 3)**, focusing on TinyML implementation for bird species recognition on the ESP32-S3-Korvo-2 development board.
 
-<div align="center">
-  <picture>
-    <img src="docs/BioDCASE_Tiny_Dev_Board.jpg" alt="ESP32-S3-Korvo-2 development board" width="400">
-  </picture>
-  <br><br>
-</div>
-
 For complete competition details, visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3).
 
 ## Background
@@ -213,12 +206,22 @@ To deploy your model to the ESP32-S3-Korvo-2 board, you'll use the built-in depl
 
 ## ESP32-S3-Korvo-2 Development Board
 
-The [ESP32-S3-Korvo-2](https://www.digikey.de/de/products/detail/espressif-systems/ESP32-S3-KORVO-2/15822448) board features:
+The [ESP32-S3-Korvo-2](https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/dev-boards/user-guide-esp32-s3-korvo-2.html) board features:
 - ESP32-S3 dual-core processor
 - Built-in microphone array
 - Audio codec for high-quality audio processing
 - Wi-Fi and Bluetooth connectivity
 - USB-C connection for programming and debugging
+- [Software Support](https://components.espressif.com/components/espressif/esp32_s3_korvo_2/versions/4.1.2/readme)
+
+and can be bought for instance [here](https://www.digikey.de/de/products/detail/espressif-systems/ESP32-S3-KORVO-2/15822448).
+
+<div align="left">
+  <picture>
+    <img src="docs/BioDCASE_Tiny_Dev_Board.jpg" alt="ESP32-S3-Korvo-2 development board" width="400">
+  </picture>
+  <br><br>
+</div>
 
 ## Code Structure
 

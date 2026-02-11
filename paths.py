@@ -5,6 +5,9 @@ PIPELINE_CONFIG_FILE = Path(__file__).parent / "pipeline_config.yaml"
 DATA_DIR = Path(__file__).parent / 'data'
 
 RAW_DATA_DIR = DATA_DIR / "01_raw"
+
+# change this to your dataset path
+#CLIPS_DIR = Path("/your/dataset/save_path")
 CLIPS_DIR = RAW_DATA_DIR / "clips"
 
 PREPROC_DIR = DATA_DIR / "02_intermediate"
