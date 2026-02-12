@@ -17,7 +17,8 @@ from paths import CLIPS_DIR, PREPROC_PRQ_PATH
 
 _PREPROC_DASK_BATCH_SIZE = 1000
 
-SPLIT_FOLDER_TO_SPLIT = {"train": "train", "val": "validation", "test": "test"}
+#SPLIT_FOLDER_TO_SPLIT = {"train": "train", "val": "validation", "test": "test"}
+SPLIT_FOLDER_TO_SPLIT = {"Training_Set": "train", "Validation_Set": "validation", "test": "test"}
 
 
 def extract_loudest_slice(audio_array, sample_rate, audio_slice_duration_ms):
@@ -52,6 +53,9 @@ def run_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path=PREP
     """
     run preprocessing - check sample rate, create classes, etc
     """
+
+    # create directory
+    if not preproc_prq_path.parent.is_dir(): preproc_prq_path.parent.mkdir(parents=True)
 
     # batch function
     def do_batch(batch: Iterable[Path], **kwargs):
@@ -112,7 +116,8 @@ def run_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path=PREP
             do_batch, 
             batches, 
             meta=pd.DataFrame({
-                "data": pd.Series([], dtype=object),
+                #"data": pd.Series([], dtype=object),
+                "data": pd.Series([], dtype=float),
                 "path": pd.Series(dtype="string"),
                 "split": pd.Series(dtype="string"),
                 "label": pd.Series(dtype="int32"),

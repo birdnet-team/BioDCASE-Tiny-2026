@@ -77,6 +77,9 @@ def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, fe
     ferature extraction
     """
 
+    # create directory
+    if not features_prq_path.parent.is_dir(): features_prq_path.parent.mkdir()
+
     # fault handler?
     faulthandler.enable()
 

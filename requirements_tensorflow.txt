@@ -1,0 +1,18 @@
+# --
+# requirements for tensorflow framework
+
+dask
+docker
+jinja2
+librosa
+keras
+matplotlib
+numpy
+numba
+pandas
+tdqm
+tensorflow
+plotly
+pyarrow
+pyyaml
+pydantic
