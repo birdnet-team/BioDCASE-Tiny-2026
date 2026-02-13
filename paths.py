@@ -7,8 +7,8 @@ DATA_DIR = Path(__file__).parent / 'data'
 RAW_DATA_DIR = DATA_DIR / "01_raw"
 
 # change this to your dataset path
-#CLIPS_DIR = Path("/your/dataset/save_path")
-CLIPS_DIR = RAW_DATA_DIR / "clips"
+CLIPS_DIR = Path("/world/dekutree/datasets/biodcase2026_task3_tiny_ml/raw")
+#CLIPS_DIR = RAW_DATA_DIR / "clips"
 
 PREPROC_DIR = DATA_DIR / "02_intermediate"
 PREPROC_PRQ_PATH = PREPROC_DIR / "preproc.parquet"
@@ -17,6 +17,7 @@ FEATURES_DIR = DATA_DIR / "03_features"
 FEATURES_PRQ_PATH = FEATURES_DIR / "features.parquet"
 FEATURES_SHAPE_JSON_PATH = FEATURES_DIR / "features_shape.json"
 FEATURES_SAMPLE_PLOT_PATH = FEATURES_DIR / "features_sample.png"
+FEATURES_SAMPLE_PLOT_DIR = FEATURES_DIR / "sample_plots"
 
 MODELS_DIR = DATA_DIR / '04_models'
 KERAS_MODEL_PATH = MODELS_DIR / 'model.keras'

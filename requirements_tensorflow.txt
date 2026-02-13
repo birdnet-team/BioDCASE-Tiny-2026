@@ -12,7 +12,11 @@ numba
 pandas
 tdqm
 tensorflow
-plotly
 pyarrow
 pyyaml
 pydantic
+
+
+# removed these:
+#kaleido
+#plotly

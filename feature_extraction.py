@@ -1,162 +1,167 @@
-import json
-from functools import partial
-import faulthandler
+# --
+# feature extraction
 
+import json
+import faulthandler
 import yaml
 import dask
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
-import pyarrow as pa
+import pyarrow
+import matplotlib.pyplot as plt
+
+from pathlib import Path
+from functools import partial
 from numpy.lib.stride_tricks import sliding_window_view
-from plotly.subplots import make_subplots
 from tqdm.dask import TqdmCallback
 
 from biodcase_tiny.feature_extraction.feature_extraction import process_window, make_constants
 from config import load_config, Config
-from paths import PREPROC_PRQ_PATH, FEATURES_PRQ_PATH, FEATURES_SAMPLE_PLOT_PATH, FEATURES_SHAPE_JSON_PATH
+from paths import PREPROC_PRQ_PATH, FEATURES_PRQ_PATH, FEATURES_SAMPLE_PLOT_DIR, FEATURES_SHAPE_JSON_PATH
 
 
-def plot_features_sample(sample: pd.DataFrame, features_shape):
-    """
-    Plot a few samples of features
-    """
+def plot_features_sample(sample: pd.DataFrame, features_shape, plot_path=None, **kwargs):
+  """
+  Plot a few samples of features
+  """
 
-    # min, max frequency
-    fmin = sample["features"].apply(lambda x: x.min()).min()
-    fmax = sample["features"].apply(lambda x: x.max()).max()
+  # create figure
+  fig = plt.figure(figsize=(12, 8))
 
-    # subplots
-    fig = make_subplots(rows=len(sample) + 1, cols=2, vertical_spacing=0.05, subplot_titles=[x.split("/")[-1] for x in list(sample["path"]) for _ in range(2)],)
+  # adjustments
+  fig.subplots_adjust(hspace=0.5, wspace=0.3)
 
-    # add traces
-    for i, (idx, row) in enumerate(sample.iterrows()):
-        path, audio_data, sample_rate = row["path"], row["data"], row["sample_rate"]
-        fig.add_trace(
-            go.Heatmap(
-                z=np.array(row["features"]).reshape(features_shape).T,
-                zmin=fmin,
-                zmax=fmax,
-                name=path,
-                showscale=False,
-            ),
-            row=i + 1,
-            col=1,
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=list(range(audio_data.shape[0])),
-                y=audio_data,
-                mode="lines",
-                name=path,
-                showlegend=False,
-            ),
-            row=i + 1,
-            col=2,
-        )
-    fig.update_layout(height=500 * len(sample), title_text="Features")
-    return fig
+  # rows and cols
+  num_rows = len(sample)
+  num_cols = 2
 
+  # kwargs
+  valid_gs_kwargs = {'width_ratios': None, 'height_ratios': None}
+  [valid_gs_kwargs.update({k: v}) for k, v in kwargs.items() if k in valid_gs_kwargs.keys()]
 
-def get_features_shape(clip_len_ms, clip_sample_rate, window_len_samples, window_stride_samples, mel_n_channels):
-    clip_len_samples = int((clip_len_ms / 1000) * clip_sample_rate)
-    return [(clip_len_samples - window_len_samples) // window_stride_samples + 1, mel_n_channels]
+  # image kwargs
+  imshow_kwargs = {'aspect': 'auto', 'interpolation': 'none', 'origin': 'lower',}
 
+  # grid spec
+  gs = fig.add_gridspec(num_rows, num_cols, **valid_gs_kwargs)
 
-def apply_windowed(data, window_len, window_stride, fn):
-    v = sliding_window_view(data, window_len)[::window_stride]
-    outs = []
-    for row in v:
-        outs.append(fn(row))
-    return np.array(outs)
+  # add traces
+  for i, (idx, sample_row) in enumerate(sample.iterrows()):
+
+    # create axis
+    ax_wav = fig.add_subplot(gs[(i*2)])
+    ax_fea = fig.add_subplot(gs[(i*2)+1])
+
+    # sample extraction of waveform and features
+    waveform, features = sample_row["data"], sample_row["features"].reshape(features_shape).T
+
+    # image
+    im_wav = ax_wav.plot(waveform)
+    im_fea = ax_fea.imshow(features, **imshow_kwargs)
+
+    # axis settings
+    ax_wav.set_title(Path(sample_row['path']).name)
+    ax_wav.set_xlabel('Time [samples]')
+    ax_wav.set_ylabel('Magnitude')
+    ax_wav.grid()
+    ax_fea.set_xlabel('Time [frames]')
+    ax_fea.set_ylabel('Magnitude')
+
+  # save figure
+  if plot_path is not None: fig.savefig(plot_path, dpi=100)
 
 
-def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, features_prq_path=FEATURES_PRQ_PATH, features_sample_plot_path=FEATURES_SAMPLE_PLOT_PATH, features_shape_json_path=FEATURES_SHAPE_JSON_PATH,):
-    """
-    ferature extraction
-    """
+def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, features_prq_path=FEATURES_PRQ_PATH, features_sample_plot_dir=FEATURES_SAMPLE_PLOT_DIR, features_shape_json_path=FEATURES_SHAPE_JSON_PATH,):
+  """
+  ferature extraction
+  """
 
-    # create directory
-    if not features_prq_path.parent.is_dir(): features_prq_path.parent.mkdir()
+  # create directory
+  if not features_prq_path.parent.is_dir(): features_prq_path.parent.mkdir()
+  if not features_sample_plot_dir.is_dir(): features_sample_plot_dir.mkdir()
 
-    # fault handler?
-    faulthandler.enable()
+  # fault handler?
+  faulthandler.enable()
 
-    # dask config
-    dask.config.set({"dataframe.convert-string": False})
+  # dask config
+  dask.config.set({"dataframe.convert-string": False})
 
-    # data extraction
-    data = dd.read_parquet(preproc_prq_path)
+  # data extraction
+  data = dd.read_parquet(preproc_prq_path)
 
-    # read and save yaml of class dict also to feature extraction
-    yaml.dump(yaml.safe_load(open(preproc_prq_path.parent / 'class_dict.yaml')), open(features_prq_path.parent / 'class_dict.yaml', 'w'))
+  # read and save yaml of class dict also to feature extraction
+  yaml.dump(yaml.safe_load(open(preproc_prq_path.parent / 'class_dict.yaml')), open(features_prq_path.parent / 'class_dict.yaml', 'w'))
 
-    # feature extraction config
-    fe_config = config.feature_extraction
-    dp_config = config.data_preprocessing
-    fc = make_constants(
-        fe_config.window_len,
-        dp_config.sample_rate,
-        fe_config.window_scaling_bits,
-        fe_config.mel_n_channels,
-        fe_config.mel_low_hz,
-        fe_config.mel_high_hz,
-        fe_config.mel_post_scaling_bits
+  # feature extraction config
+  fe_config = config.feature_extraction
+  dp_config = config.data_preprocessing
+  fc = make_constants(
+    fe_config.window_len,
+    dp_config.sample_rate,
+    fe_config.window_scaling_bits,
+    fe_config.mel_n_channels,
+    fe_config.mel_low_hz,
+    fe_config.mel_high_hz,
+    fe_config.mel_post_scaling_bits
+  )
+
+  # window function
+  apply_windowed = lambda data, window_len, window_stride, fn: np.array([fn(row) for row in sliding_window_view(data, window_len)[::window_stride]])
+
+  # this partial stuff is just a way to set all config parameters, so we have a function that only takes data as input
+  do_windows_fn = partial(
+    apply_windowed,
+    fn=partial(
+      process_window,
+      hanning=fc.hanning_window,
+      mel_constants=fc.mel_constants,
+      fft_twiddle=fc.fft_twiddle,
+      window_scaling_bits=fc.window_scaling_bits,
+      mel_post_scaling_bits=fc.mel_post_scaling_bits
+    ),
+    window_len=fe_config.window_len,
+    window_stride=fe_config.window_stride,
+  )
+
+  features_example = do_windows_fn(data["data"].head(1)[0])
+  features_shape = features_example.shape
+
+  # extract partitions
+  with TqdmCallback(desc="Extracting features from preprocessed data"):
+
+    # data processing
+    data = data.map_partitions(
+      lambda df: df.assign(features=df["data"].apply(lambda clip: do_windows_fn(clip).flatten(),)),
+      #meta=pd.DataFrame(dict(**{c: data._meta[c] for c in data._meta}, features=pd.Series([], dtype=object),))
+      meta=pd.DataFrame(dict(**{c: data._meta[c] for c in data._meta}, features=pd.Series([], dtype=float),))
+      )
+
+    # choose a sample and plot it
+    plot_features_sample(data.head(3), features_shape, plot_path=features_sample_plot_dir / 'features_sample.png')
+
+    # remove original audio
+    data: dd.DataFrame = data.drop("data", axis=1)
+
+    # add features to parquet, make sure array is serialized correctly
+    data.to_parquet(
+      features_prq_path,
+      schema={'features': pyarrow.list_(pyarrow.float32())},
+      write_index=False,
     )
 
-    # this partial stuff is just a way to set all config parameters, so we have a function that only takes data as input
-    do_windows_fn = partial(
-        apply_windowed,
-        fn=partial(
-            process_window,
-            hanning=fc.hanning_window,
-            mel_constants=fc.mel_constants,
-            fft_twiddle=fc.fft_twiddle,
-            window_scaling_bits=fc.window_scaling_bits,
-            mel_post_scaling_bits=fc.mel_post_scaling_bits
-        ),
-        window_len=fe_config.window_len,
-        window_stride=fe_config.window_stride,
-    )
+  # save the feature shape as rows are flattened to recover them later
+  json.dump(features_shape, open(features_shape_json_path, 'w'))
 
-    features_example = do_windows_fn(data["data"].head(1)[0])
-    features_shape = features_example.shape
-
-    # extract partitions
-    with TqdmCallback(desc="Extracting features from preprocessed data"):
-
-        # data processing
-        data = data.map_partitions(
-            lambda df: df.assign(features=df["data"].apply(lambda clip: do_windows_fn(clip).flatten(),)),
-            meta=pd.DataFrame(
-                dict(
-                    **{c: data._meta[c] for c in data._meta},
-                    features=pd.Series([], dtype=object),
-                )
-            )
-        )
-        sample = data.head(10)
-        features_sample_fig = plot_features_sample(sample, features_shape)
-        data: dd.DataFrame = data.drop("data", axis=1)  # remove original audio
-        data.to_parquet(
-            features_prq_path,
-            # make sure array is serialized correctly
-            schema={'features': pa.list_(pa.float32())},
-            write_index=False,
-        )
-    features_sample_fig.write_image(features_sample_plot_path)
-    with features_shape_json_path.open("w") as f:
-        json.dump(features_shape, f)  # we save the feature shape as rows are flattened, so we can recover later
 
 
 if __name__ == "__main__":
-    """
-    feature extraction
-    """
+  """
+  feature extraction
+  """
 
-    # config
-    config = load_config()
+  # config
+  config = load_config()
 
-    # run feature extraction
-    run_feature_extraction(config)
+  # run feature extraction
+  run_feature_extraction(config)

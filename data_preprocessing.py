@@ -8,135 +8,145 @@ import numpy as np
 import pandas as pd
 import dask.dataframe as dd
 import dask
-from tqdm.dask import TqdmCallback
-import pyarrow as pa
+import pyarrow
 import soundfile
 
+from tqdm.dask import TqdmCallback
 from config import load_config, Config
 from paths import CLIPS_DIR, PREPROC_PRQ_PATH
 
 _PREPROC_DASK_BATCH_SIZE = 1000
 
-#SPLIT_FOLDER_TO_SPLIT = {"train": "train", "val": "validation", "test": "test"}
-SPLIT_FOLDER_TO_SPLIT = {"Training_Set": "train", "Validation_Set": "validation", "test": "test"}
+SPLIT_FOLDER_TO_SPLIT = {"train": "train", "val": "validation", "test": "test"}
 
 
 def extract_loudest_slice(audio_array, sample_rate, audio_slice_duration_ms):
-    """
-    Find the max of the audio, then return a slice of duration audio_slice_duration_ms centred on the max.
-    Also deal with boundary conditions.
+  """
+  Find the max of the audio, then return a slice of duration audio_slice_duration_ms centred on the max.
+  Also deal with boundary conditions.
 
-    :param audio_slice_duration_ms:
-    :return: slice with duration audio_slice_duration_ms
-    """
+  :param audio_slice_duration_ms:
+  :return: slice with duration audio_slice_duration_ms
+  """
 
-    slice_n_samples = int(audio_slice_duration_ms / 1000 * sample_rate)
-    audio_n_samples = audio_array.shape[0]
-    left_edge = slice_n_samples // 2
-    right_edge = slice_n_samples - left_edge
+  slice_n_samples = int(audio_slice_duration_ms / 1000 * sample_rate)
+  audio_n_samples = audio_array.shape[0]
+  left_edge = slice_n_samples // 2
+  right_edge = slice_n_samples - left_edge
 
-    max_index = np.argmax(audio_array)
-    start_index = max(max_index - left_edge, 0)
-    end_index = min(max_index + right_edge, audio_n_samples)
+  max_index = np.argmax(audio_array)
+  start_index = max(max_index - left_edge, 0)
+  end_index = min(max_index + right_edge, audio_n_samples)
 
-    # Handle edge cases where the slice would go beyond bounds
-    if end_index - start_index < slice_n_samples:
-        if start_index == 0:  # Cut at left edge
-            end_index = slice_n_samples
-        else:  # Cut at right edge
-            start_index = audio_n_samples - slice_n_samples
-            end_index = audio_n_samples
-    return audio_array[start_index:end_index]
+  # Handle edge cases where the slice would go beyond bounds
+  if end_index - start_index < slice_n_samples:
+    if start_index == 0:  # Cut at left edge
+      end_index = slice_n_samples
+    else:  # Cut at right edge
+      start_index = audio_n_samples - slice_n_samples
+      end_index = audio_n_samples
+  return audio_array[start_index:end_index]
 
 
 def run_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path=PREPROC_PRQ_PATH):
-    """
-    run preprocessing - check sample rate, create classes, etc
-    """
+  """
+  run preprocessing - check sample rate, create classes, etc
+  """
 
-    # create directory
-    if not preproc_prq_path.parent.is_dir(): preproc_prq_path.parent.mkdir(parents=True)
+  # assertions
+  assert clips_dir.is_dir(), "Your selected dataset directory does not exist: {}".format(clips_dir)
 
-    # batch function
-    def do_batch(batch: Iterable[Path], **kwargs):
+  # create directory
+  if not preproc_prq_path.parent.is_dir(): preproc_prq_path.parent.mkdir(parents=True)
 
-        # data
-        slice_data = []
+  # batch function
+  def do_batch(batch: Iterable[Path], **kwargs):
 
-        # get class dict
-        actual_class_dict = kwargs.get('class_dict')
-        assert actual_class_dict is not None
+    # data
+    slice_data = []
 
-        # for each sample
-        for path in batch:
+    # get class dict
+    actual_class_dict = kwargs.get('class_dict')
+    assert actual_class_dict is not None
 
-            # todo: resample all to specific fs
-            # load audio
-            #audio_array, sample_rate = librosa.load(path, sr=config.data_preprocessing.sample_rate, mono=True)
-            audio_array, sample_rate = librosa.load(path, sr=None, mono=True)
+    # for each sample
+    for path in batch:
 
-            # info
-            #print("path: ", Path(path).name), print("fs: ", sample_rate), print("class: ", actual_class_dict[path.parent.name]), print("split: ", SPLIT_FOLDER_TO_SPLIT.get(path.parents[1].name, None)), print("soundfile: ", soundfile.info(path))
+      # todo: resample all to specific fs
+      # load audio
+      #audio_array, sample_rate = librosa.load(path, sr=config.data_preprocessing.sample_rate, mono=True)
+      audio_array, sample_rate = librosa.load(path, sr=None, mono=True)
 
-            audio_array_int16 = (audio_array * np.iinfo(np.int16).max).astype(np.int16)
-            audio_slice = extract_loudest_slice(audio_array_int16, sample_rate, config.data_preprocessing.audio_slice_duration_ms)
-            slice_data.extend([{
-                "data": audio_slice,
-                "path": str(path),
-                "label": actual_class_dict[path.parent.name],
-                "split": SPLIT_FOLDER_TO_SPLIT.get(path.parents[1].name, None),
-                "sample_rate": sample_rate
-            }])
-        return pd.DataFrame(slice_data)
+      # info
+      #print("path: ", Path(path).name), print("fs: ", sample_rate), print("class: ", actual_class_dict[path.parent.name]), print("split: ", SPLIT_FOLDER_TO_SPLIT.get(path.parents[1].name, None)), print("soundfile: ", soundfile.info(path))
 
-    # all clips
-    clips = sorted(list(clips_dir.rglob("*.wav")))
+      # to int16 conversion for serialization
+      audio_array_int16 = (audio_array * np.iinfo(np.int16).max).astype(np.int16)
 
-    # create class dict
-    class_dict = {k: i for i, k in enumerate(sorted(np.unique([str(Path(clip.parent.name)) for clip in clips]).tolist()))}
+      # strip audio to laudest section (ensures audio have same length)
+      audio_slice = extract_loudest_slice(audio_array_int16, sample_rate, config.data_preprocessing.audio_slice_duration_ms)
 
-    # save class dict
-    yaml.dump({'class_dict': class_dict}, open(preproc_prq_path.parent / 'class_dict.yaml', 'w'))
+      # add dataframe batch
+      slice_data.extend([{
+        "data": audio_slice,
+        "path": str(path),
+        "label": actual_class_dict[path.parent.name],
+        "split": SPLIT_FOLDER_TO_SPLIT.get(path.parents[1].name, None),
+        "sample_rate": sample_rate
+        }])
 
-    batches = []
-    total_batches = (len(clips) + _PREPROC_DASK_BATCH_SIZE - 1) // _PREPROC_DASK_BATCH_SIZE
-    for batch_idx in range(total_batches):
-        start_idx = batch_idx * _PREPROC_DASK_BATCH_SIZE
-        end_idx = min(start_idx + _PREPROC_DASK_BATCH_SIZE, len(clips))
-        batches.append(clips[start_idx:end_idx])
+    return pd.DataFrame(slice_data)
 
-    # process clips in batches
-    with TqdmCallback(desc="Preprocessing clips in batches"):
+  # all clips
+  clips = sorted(list(clips_dir.rglob("*.wav")))
+  assert len(clips), "Could not find .wav files in {}".format(clips_dir)
 
-        # config
-        dask.config.set({"dataframe.convert-string": False})
+  # create class dict
+  class_dict = {k: i for i, k in enumerate(sorted(np.unique([str(Path(clip.parent.name)) for clip in clips]).tolist()))}
 
-        # batch processing
-        all_data: dd.DataFrame = dd.from_map(
-            do_batch, 
-            batches, 
-            meta=pd.DataFrame({
-                #"data": pd.Series([], dtype=object),
-                "data": pd.Series([], dtype=float),
-                "path": pd.Series(dtype="string"),
-                "split": pd.Series(dtype="string"),
-                "label": pd.Series(dtype="int32"),
-                "sample_rate": pd.Series(dtype="int32"),
-                }),
-            class_dict=class_dict
-        )
+  # save class dict
+  yaml.dump({'class_dict': class_dict}, open(preproc_prq_path.parent / 'class_dict.yaml', 'w'))
 
-        # make sure array is serialized correctly (data)
-        all_data.to_parquet(preproc_prq_path, write_index=False, schema={'data': pa.list_(pa.int16())})
+  batches = []
+  total_batches = (len(clips) + _PREPROC_DASK_BATCH_SIZE - 1) // _PREPROC_DASK_BATCH_SIZE
+  for batch_idx in range(total_batches):
+    start_idx = batch_idx * _PREPROC_DASK_BATCH_SIZE
+    end_idx = min(start_idx + _PREPROC_DASK_BATCH_SIZE, len(clips))
+    batches.append(clips[start_idx:end_idx])
+
+  # process clips in batches
+  with TqdmCallback(desc="Preprocessing clips in batches"):
+
+    # config
+    dask.config.set({"dataframe.convert-string": False})
+
+    # batch processing
+    all_data: dd.DataFrame = dd.from_map(
+      do_batch, 
+      batches, 
+      meta=pd.DataFrame({
+        "data": pd.Series([], dtype=int),
+        #"data": pd.Series([], dtype=float),
+        "path": pd.Series(dtype="string"),
+        "split": pd.Series(dtype="string"),
+        "label": pd.Series(dtype="int32"),
+        "sample_rate": pd.Series(dtype="int32"),
+        }),
+      class_dict=class_dict
+    )
+
+    # make sure array is serialized correctly (data)
+    all_data.to_parquet(preproc_prq_path, write_index=False, schema={'data': pyarrow.list_(pyarrow.int16())})
+
 
 
 if __name__ == "__main__":
-    """
-    run preprocessing
-    """
+  """
+  run preprocessing
+  """
 
-    # load config
-    config = load_config()
+  # load config
+  config = load_config()
 
-    # run preprocessing
-    run_preprocessing(config)
+  # run preprocessing
+  run_preprocessing(config)
