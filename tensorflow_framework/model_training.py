@@ -1,3 +1,6 @@
+# --
+# model training
+
 import keras
 import numpy as np
 import pandas as pd
@@ -49,6 +52,9 @@ def make_tf_datasets(data: pd.DataFrame, features_shape, class_dict, buffer_size
 
 
 def get_class_weight(train_ds):
+  """
+  class weights
+  """
   train_labels = train_ds["label"]
   l_counts: dict[str, int] = dict(train_labels.value_counts())
   tot_counts = len(train_labels)
@@ -57,6 +63,9 @@ def get_class_weight(train_ds):
 
 
 def predict_validation(model: Model, val_dataset: tf.data.Dataset):
+  """
+  predict validation
+  """
   val_ds = val_dataset.cache().prefetch(tf.data.AUTOTUNE)
   y_true = np.concat(list(val_ds.map(lambda x, y: y).as_numpy_iterator()))
   y_pred = model.predict(val_ds)
@@ -142,6 +151,9 @@ def run_model_training(config: Config):
   model training
   """
 
+  # assertions
+  assert FEATURES_PRQ_PATH.is_dir(), "No feature extractions available in [{}], run feature extraction first!".format(FEATURES_PRQ_PATH)
+
   # create path if not already created
   if not KERAS_MODEL_PATH.parent.is_dir(): KERAS_MODEL_PATH.parent.mkdir()
   if not CM_FIG_PATH.parent.is_dir(): CM_FIG_PATH.parent.mkdir()
@@ -185,11 +197,10 @@ def run_model_training(config: Config):
   reference_ds.save(str(REFERENCE_DATASET_PATH))
 
   # info
-  print("Training finished successfully!\nFind confusion matrix in [{}].".format(CM_FIG_PATH))
+  print("Training finished successfully!\nConfusion matrix saved in [{}].".format(CM_FIG_PATH))
 
   # plot confusion matrix
   plot_confusion_matrix(y_true, y_pred, labels=list(class_dict.keys()), plot_path=CM_FIG_PATH, is_showing_plot=False)
-
 
 
 if __name__ == "__main__":

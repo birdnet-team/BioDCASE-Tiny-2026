@@ -1,6 +1,8 @@
 # --
 # feature extraction
 
+import sys
+
 import json
 import faulthandler
 import yaml
@@ -16,9 +18,13 @@ from functools import partial
 from numpy.lib.stride_tricks import sliding_window_view
 from tqdm.dask import TqdmCallback
 
-from biodcase_tiny.feature_extraction.feature_extraction import process_window, make_constants
 from config import load_config, Config
 from paths import PREPROC_PRQ_PATH, FEATURES_PRQ_PATH, FEATURES_SAMPLE_PLOT_DIR, FEATURES_SHAPE_JSON_PATH
+
+# required package paths
+[sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
+
+from biodcase_tiny.feature_extraction.feature_extraction import process_window, make_constants
 
 
 def plot_features_sample(sample: pd.DataFrame, features_shape, plot_path=None, **kwargs):
@@ -80,9 +86,12 @@ def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, fe
   ferature extraction
   """
 
+  # assertions
+  assert preproc_prq_path.is_dir(), "preprocessing directory does not exist: [{}], run preprocessing before!".format(preproc_prq_path)
+
   # create directory
-  if not features_prq_path.parent.is_dir(): features_prq_path.parent.mkdir()
-  if not features_sample_plot_dir.is_dir(): features_sample_plot_dir.mkdir()
+  if not features_prq_path.parent.is_dir(): features_prq_path.parent.mkdir(parents=True)
+  if not features_sample_plot_dir.is_dir(): features_sample_plot_dir.mkdir(parents=True)
 
   # fault handler?
   faulthandler.enable()
@@ -127,8 +136,8 @@ def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, fe
     window_stride=fe_config.window_stride,
   )
 
-  features_example = do_windows_fn(data["data"].head(1)[0])
-  features_shape = features_example.shape
+  # feature shape of example
+  features_shape = do_windows_fn(data["data"].head(1)[0]).shape
 
   # extract partitions
   with TqdmCallback(desc="Extracting features from preprocessed data"):
@@ -136,10 +145,10 @@ def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, fe
     # data processing
     data = data.map_partitions(
       lambda df: df.assign(features=df["data"].apply(lambda clip: do_windows_fn(clip).flatten(),)),
-      #meta=pd.DataFrame(dict(**{c: data._meta[c] for c in data._meta}, features=pd.Series([], dtype=object),))
       meta=pd.DataFrame(dict(**{c: data._meta[c] for c in data._meta}, features=pd.Series([], dtype=float),))
       )
 
+    # todo: create plots of each class
     # choose a sample and plot it
     plot_features_sample(data.head(3), features_shape, plot_path=features_sample_plot_dir / 'features_sample.png')
 
@@ -155,7 +164,6 @@ def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, fe
 
   # save the feature shape as rows are flattened to recover them later
   json.dump(features_shape, open(features_shape_json_path, 'w'))
-
 
 
 if __name__ == "__main__":

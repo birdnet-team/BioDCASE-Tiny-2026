@@ -11,17 +11,22 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-from pathlib import Path
 
+import sys
 import keras
 import tensorflow as tf
 from keras import Model
 
+from pathlib import Path
+from config import Config, load_config
+from paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, GEN_CODE_DIR, TFLITE_MODEL_PATH
+
+# required package paths
+[sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
+
 from biodcase_tiny.embedded.esp_target import ESPTarget
 from biodcase_tiny.embedded.esp_toolchain import ESP_IDF_v5_2
 from biodcase_tiny.feature_extraction.feature_extraction import make_constants
-from config import Config, load_config
-from paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, GEN_CODE_DIR, TFLITE_MODEL_PATH
 
 
 def run_embedded_code_generation(config: Config, model_path: Path = KERAS_MODEL_PATH, reference_dataset_path: Path = REFERENCE_DATASET_PATH, tflite_model_path: Path = TFLITE_MODEL_PATH, gen_code_dir: Path = GEN_CODE_DIR, quantize: bool = False):
@@ -72,12 +77,9 @@ def run_embedded_code_generation(config: Config, model_path: Path = KERAS_MODEL_
   toolchain = ESP_IDF_v5_2(config.embedded_code_generation.serial_device)
   #toolchain.set_target(src_path=src_path)
   toolchain.compile(src_path=src_path)
-  # toolchain.flash(src_path=src_path)
-  # toolchain.monitor(src_path=src_path)
 
   # info
   print("Embedded code has been successfully generated!")
-
 
 
 if __name__ == '__main__':

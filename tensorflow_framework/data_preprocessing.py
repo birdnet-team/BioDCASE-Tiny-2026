@@ -1,5 +1,5 @@
 # --
-# preprocessing
+# data preprocessing
 
 from functools import partial
 from pathlib import Path
@@ -140,7 +140,6 @@ def run_data_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path
 
     # make sure array is serialized correctly (data)
     all_data.to_parquet(preproc_prq_path, write_index=False, schema={'data': pyarrow.list_(pyarrow.int16())})
-
 
 
 if __name__ == "__main__":

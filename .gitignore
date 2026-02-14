@@ -1,15 +1,16 @@
-/your_output
-!data/01_raw/.gitkeep
-!data/02_intermediate/.gitkeep
-!data/03_features/.gitkeep
-!data/04_models/.gitkeep
-!data/05_reporting/.gitkeep
-!data/06_generated_code/.gitkeep
+# --
+# gitignore biodcase tiny ml
 
+# output directory
+your_output/
+
+# virtual env
 .venv
 
+# python specific
 __pycache__
 
+# other
 #biodcase_tiny/embedded/firmware/main/feature_config_generated.h
 biodcase_tiny/feature_extraction/FeatureConfig.py
 biodcase_tiny/feature_extraction/FilterbankConfig.py
