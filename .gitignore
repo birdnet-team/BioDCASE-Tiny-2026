@@ -1,4 +1,4 @@
-/data
+/your_output
 !data/01_raw/.gitkeep
 !data/02_intermediate/.gitkeep
 !data/03_features/.gitkeep

@@ -25,57 +25,68 @@ from paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, GEN_CODE_DIR, TFLITE
 
 
 def run_embedded_code_generation(config: Config, model_path: Path = KERAS_MODEL_PATH, reference_dataset_path: Path = REFERENCE_DATASET_PATH, tflite_model_path: Path = TFLITE_MODEL_PATH, gen_code_dir: Path = GEN_CODE_DIR, quantize: bool = False):
-    """
-    embedded code generation
-    """
+  """
+  embedded code generation
+  """
 
-    # create directory
-    if not gen_code_dir.is_dir(): gen_code_dir.mkdir()
+  # create directory
+  if not gen_code_dir.is_dir(): gen_code_dir.mkdir()
 
-    # check model file ending
-    if model_path.suffix == ".keras":
-        model = keras.models.load_model(model_path)
-        reference_dataset = tf.data.Dataset.load(str(reference_dataset_path))
-    elif model_path.suffix == ".tflite":
-        with model_path.open("rb") as f:
-            model = f.read()
-        reference_dataset = None
-    else:
-        raise ValueError("Only Keras and tflite format supported")
+  # check model file ending
+  if model_path.suffix == ".keras":
+    model = keras.models.load_model(model_path)
+    reference_dataset = tf.data.Dataset.load(str(reference_dataset_path))
+  elif model_path.suffix == ".tflite":
+    with model_path.open("rb") as f:
+      model = f.read()
+    reference_dataset = None
+  else:
+    raise ValueError("Only Keras and tflite format supported")
 
-    # configs
-    dp_c = config.data_preprocessing
-    fe_c = config.feature_extraction
-    feature_config = make_constants(sample_rate=dp_c.sample_rate, win_samples=fe_c.window_len, window_scaling_bits=fe_c.window_scaling_bits, mel_n_channels=fe_c.mel_n_channels, mel_low_hz=fe_c.mel_low_hz, mel_high_hz=fe_c.mel_high_hz, mel_post_scaling_bits=fe_c.mel_post_scaling_bits)
+  # configs
+  dp_c = config.data_preprocessing
+  fe_c = config.feature_extraction
+  feature_config = make_constants(sample_rate=dp_c.sample_rate, win_samples=fe_c.window_len, window_scaling_bits=fe_c.window_scaling_bits, mel_n_channels=fe_c.mel_n_channels, mel_low_hz=fe_c.mel_low_hz, mel_high_hz=fe_c.mel_high_hz, mel_post_scaling_bits=fe_c.mel_post_scaling_bits)
 
-    # target createion
-    target = ESPTarget(model, feature_config, reference_dataset, quantize=quantize)
-    target.validate()
+  # info
+  print("\nTarget creation:")
 
-    # tflite model to buffer
-    with tflite_model_path.open("wb") as f: f.write(target.get_model_buf())
+  # target createion
+  target = ESPTarget(model, feature_config, reference_dataset, quantize=quantize)
+  target.validate()
 
-    # source path
-    src_path = gen_code_dir / "src"
-    src_path.mkdir(exist_ok=True)
+  # tflite model to buffer
+  with tflite_model_path.open("wb") as f: f.write(target.get_model_buf())
 
-    # write templates
-    target.process_target_templates(src_path)
+  # source path
+  src_path = gen_code_dir / "src"
+  src_path.mkdir(exist_ok=True)
 
-    # toolchain: compile, flash, and monitor
-    toolchain = ESP_IDF_v5_2(config.embedded_code_generation.serial_device)
-    toolchain.compile(src_path=src_path)
-    toolchain.flash(src_path=src_path)
-    toolchain.monitor(src_path=src_path)
+  # write templates
+  target.process_target_templates(src_path)
+
+  # info
+  print("\nCode Compilation:")
+
+  # toolchain: compile, flash, and monitor
+  toolchain = ESP_IDF_v5_2(config.embedded_code_generation.serial_device)
+  #toolchain.set_target(src_path=src_path)
+  toolchain.compile(src_path=src_path)
+  # toolchain.flash(src_path=src_path)
+  # toolchain.monitor(src_path=src_path)
+
+  # info
+  print("Embedded code has been successfully generated!")
+
 
 
 if __name__ == '__main__':
-    """
-    embedded code generation
-    """
+  """
+  embedded code generation
+  """
 
-    # config
-    config = load_config()
+  # config
+  config = load_config()
 
-    # run embedded code generation
-    run_embedded_code_generation(config)
+  # run embedded code generation
+  run_embedded_code_generation(config)

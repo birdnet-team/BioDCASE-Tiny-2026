@@ -30,7 +30,7 @@ from keras.src.metrics import AUC, Accuracy
 from tensorflow.python.keras.utils.np_utils import to_categorical
 
 from config import load_config
-from data_preprocessing import run_preprocessing
+from data_preprocessing import run_data_preprocessing
 from embedded_code_generation import create_target, generate_and_flash
 from feature_extraction import run_feature_extraction
 from paths import CLIPS_DIR, EVAL_CLIPS_DIR, EVAL_ZIP_PATH, GEN_CODE_DIR
@@ -195,7 +195,7 @@ def run_evaluation(model_path, config_path, dataset, channel_order, evaluate_emb
         features_sample_plot_path = root_dir / "features_sample_plot.png"
         reference_dataset_path = root_dir / "reference_dataset"
 
-        run_preprocessing(
+        run_data_preprocessing(
             config,
             clips_dir=clips_dir,
             preproc_prq_path=preproc_prq_path

@@ -63,7 +63,7 @@ def predict_validation(model: Model, val_dataset: tf.data.Dataset):
   return y_true, y_pred
 
 
-def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, is_show_plot=False):
+def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, is_showing_plot=False):
   """
   plot confusion matrix
   """
@@ -133,8 +133,8 @@ def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, is
   # save figure
   if plot_path is not None: fig.savefig(plot_path, dpi=100)
 
-  # show plot
-  if is_show_plot: plt.show()
+  # show plot or close
+  plt.show() if is_showing_plot else plt.close()
 
 
 def run_model_training(config: Config):
@@ -185,10 +185,10 @@ def run_model_training(config: Config):
   reference_ds.save(str(REFERENCE_DATASET_PATH))
 
   # info
-  print("Training finished successfully!")
+  print("Training finished successfully!\nFind confusion matrix in [{}].".format(CM_FIG_PATH))
 
   # plot confusion matrix
-  plot_confusion_matrix(y_true, y_pred, labels=list(class_dict.keys()), plot_path=CM_FIG_PATH, is_show_plot=True)
+  plot_confusion_matrix(y_true, y_pred, labels=list(class_dict.keys()), plot_path=CM_FIG_PATH, is_showing_plot=False)
 
 
 

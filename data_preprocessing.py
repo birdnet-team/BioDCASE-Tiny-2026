@@ -1,3 +1,6 @@
+# --
+# preprocessing
+
 from functools import partial
 from pathlib import Path
 from typing import Iterable
@@ -48,7 +51,7 @@ def extract_loudest_slice(audio_array, sample_rate, audio_slice_duration_ms):
   return audio_array[start_index:end_index]
 
 
-def run_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path=PREPROC_PRQ_PATH):
+def run_data_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path=PREPROC_PRQ_PATH):
   """
   run preprocessing - check sample rate, create classes, etc
   """
@@ -149,4 +152,4 @@ if __name__ == "__main__":
   config = load_config()
 
   # run preprocessing
-  run_preprocessing(config)
+  run_data_preprocessing(config)

@@ -71,6 +71,9 @@ def plot_features_sample(sample: pd.DataFrame, features_shape, plot_path=None, *
   # save figure
   if plot_path is not None: fig.savefig(plot_path, dpi=100)
 
+  # close figure
+  plt.close()
+
 
 def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, features_prq_path=FEATURES_PRQ_PATH, features_sample_plot_dir=FEATURES_SAMPLE_PLOT_DIR, features_shape_json_path=FEATURES_SHAPE_JSON_PATH,):
   """
