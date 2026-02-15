@@ -1,8 +1,9 @@
 # --
 # gitignore biodcase tiny ml
 
-# output directory
+# ignore directory
 output/
+data/
 
 # virtual env
 .venv

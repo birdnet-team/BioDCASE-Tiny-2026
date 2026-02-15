@@ -1,5 +1,6 @@
 data_preprocessing:
   audio_slice_duration_ms: 3000
+  #audio_slice_duration_ms: 2000
   sample_rate: 16000
 feature_extraction:
   window_len: 4096

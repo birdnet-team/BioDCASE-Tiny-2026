@@ -9,8 +9,7 @@ datamodule:
 
   # dataset
   dataset:
-    #root_path: '/path/to/the/downloaded/dataset'
-    root_path: '/world/dekutree/datasets/biodcase2026_task3_tiny_ml/raw/'
+    root_path: '/path/to/the/downloaded/dataset'
     file_ext: '.wav'
 
   # intermediate

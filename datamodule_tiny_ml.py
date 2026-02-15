@@ -6,6 +6,7 @@ import re
 import torch
 import yaml
 import numpy as np
+import soundfile
 
 from pathlib import Path
 
@@ -154,9 +155,23 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # filter files
     files = self.filter_files_with_config(files, self.cfg['intermediate']['filter_files'])
-    
-    print(files)
-    stop
+      
+    # process files
+    for file in files:
+
+      # out file
+      out_file_path = self.file_naming_by_config(self.cfg['intermediate']['file_naming'], file, target_path=self.intermediate_path, file_root_dir=self.dataset_path)
+
+      # read audio
+      audio_array, sample_rate = soundfile.read(file)
+
+      # to int16 conversion for serialization
+      audio_array_int16 = (audio_array * np.iinfo(np.int16).max).astype(np.int16)
+
+      print(file)
+      print(out_file_path)
+      print(audio_array_int16)
+      stop
 
 
   def caching(self):

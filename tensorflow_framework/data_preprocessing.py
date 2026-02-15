@@ -21,6 +21,7 @@ from paths import CLIPS_DIR, PREPROC_PRQ_PATH
 _PREPROC_DASK_BATCH_SIZE = 1000
 
 SPLIT_FOLDER_TO_SPLIT = {"train": "train", "val": "validation", "test": "test"}
+#SPLIT_FOLDER_TO_SPLIT = {"Training_Set": "train", "Validation_Set": "validation"}
 
 
 def extract_loudest_slice(audio_array, sample_rate, audio_slice_duration_ms):
@@ -58,6 +59,10 @@ def run_data_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path
 
   # assertions
   assert clips_dir.is_dir(), "Your selected dataset directory does not exist: {}".format(clips_dir)
+
+  # check folder structure
+  subdirs = [p.name for p in clips_dir.iterdir() if p.is_dir()]
+  assert all([True if d in subdirs else False for d in list(SPLIT_FOLDER_TO_SPLIT.keys())]), "The splits of your dataset are not correct: {} vs. {}".format(list(SPLIT_FOLDER_TO_SPLIT.keys()), subdirs)
 
   # create directory
   if not preproc_prq_path.parent.is_dir(): preproc_prq_path.parent.mkdir(parents=True)
