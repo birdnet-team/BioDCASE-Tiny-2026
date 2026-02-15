@@ -114,7 +114,6 @@ esp_err_t rescale_to_int8(std::span<uint32_t> data, std::span<int8_t> out, int32
     return ESP_OK;
 }
 
-
 esp_err_t init_feature_extraction(const FeatureConfigs::FeatureConfig *fc) {
     auto * twiddle = new int16_t[fc->fft_twiddle()->size()];
     std::memcpy(twiddle, fc->fft_twiddle()->data(), fc->fft_twiddle()->size() * sizeof(int16_t));
@@ -125,7 +124,6 @@ esp_err_t init_feature_extraction(const FeatureConfigs::FeatureConfig *fc) {
     }
     return ret;
 }
-
 
 esp_err_t extract_features(
     std::span<int16_t> in_audio,

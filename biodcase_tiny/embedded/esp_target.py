@@ -23,6 +23,7 @@ to generate the final code.
 import os
 import re
 import shutil
+import jinja2
 from copy import copy, deepcopy
 from pathlib import Path
 
@@ -31,7 +32,6 @@ import tensorflow as tf
 from keras import Model
 from tensorflow.data import Dataset
 from tensorflow.lite.tools import visualize as tflite_vis
-from jinja2 import Environment, FileSystemLoader
 from biodcase_tiny.feature_extraction.feature_extraction import FeatureConstants, convert_constants
 
 TEMPLATE_EXTENSION = "jinja"
@@ -61,29 +61,38 @@ class ESPTarget():
 
     # model configs
     self._model_ops = self.get_model_ops_and_acts(self._model_buf)
-    self._feature_config_buf = self.get_feature_config_buf(feature_config)
+    self._feature_config_buf = convert_constants(feature_config)
+
+    # other members
+    self.env = None
 
 
   def validate(self):
     """
     Validate Target inputs, including the compatibility of model.
     """
-    self.check_model_compatible()
 
-
-  @classmethod
-  def setup_template_environment(cls, template_dir):
-    cls.env = Environment(loader=FileSystemLoader(template_dir))
+    # check model compatibility
+    if None in self._model_ops:
+      raise ValueError(
+        "Model contains op(s) that can't be converted to tflite micro. "
+        f"Known ops: {self._model_ops.difference({None})}"
+      )
 
 
   def process_target_templates(self, outdir: Path) -> None:
+    """
+    process target templates
+    """
+
+    # validate first
     self.validate()
 
     # get available projects and their root template folders
-    self.setup_template_environment(TEMPLATE_DIR)
+    self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_DIR))
 
     # extract context to be passed to jinja render
-    context = self.extract_context()
+    context = self.extract_context_for_jinja_renderer()
 
     # Render and save each template
     if not outdir.exists():
@@ -108,6 +117,11 @@ class ESPTarget():
 
   @staticmethod
   def _create_model_buf(model: Model, reference_dataset: Dataset, quantize=True):
+    """
+    create model buffer
+    """
+
+    # converter
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT] if quantize else []
     if quantize:
@@ -127,35 +141,22 @@ class ESPTarget():
     return model_buf
 
 
-  def get_model_buf(self):
-    return self._model_buf
+  def extract_context_for_jinja_renderer(self) -> dict:
+    """
+    extract context - for jinja renderer
+    """
+    return {
+      "feature_config": {"hex_vals": [hex(b) for b in self._feature_config_buf]},
+      "model": {"hex_vals": [hex(b) for b in self._model_buf]},
+      }
 
 
-  @staticmethod
-  def get_feature_config_buf(feature_config: FeatureConstants) -> bytearray:
-    return convert_constants(feature_config)
-
-
-  def check_model_compatible(self):
-    if None in self._model_ops:
-      raise ValueError(
-        "Model contains op(s) that can't be converted to tflite micro. "
-        f"Known ops: {self._model_ops.difference({None})}"
-      )
-
-
-  def save_tflite(self, outdir: Path) -> None:
+  def save_tflite_model(self, outdir: Path) -> None:
+    """
+    save tflite
+    """
     with outdir.open("wb") as f:
       f.write(self._model_buf)
-
-
-  def extract_context(self) -> dict:
-    model_hex_vals = [hex(b) for b in self._model_buf]
-    feature_config_hex_vals = [hex(b) for b in self._feature_config_buf]
-    return {
-      "feature_config": {"hex_vals": feature_config_hex_vals},
-      "model": {"hex_vals": model_hex_vals}
-    }
 
 
   def get_model_ops_and_acts(self, model_buf):
@@ -179,6 +180,9 @@ class ESPTarget():
         continue
       operators_and_activations.add(tflite_vis.BuiltinCodeToName(op_code["builtin_code"]))  # will be None if unknown
     return operators_and_activations
+
+
+  def get_model_buf(self): return self._model_buf
 
 
 # --

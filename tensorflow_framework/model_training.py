@@ -19,7 +19,7 @@ from model import create_model, train_model
 
 def set_seeds(seed):
   """
-  set seeds, for experiment replecations
+  set seeds, for experiment replications
   """
   tf.config.experimental.enable_op_determinism()
   keras.utils.set_random_seed(seed)
@@ -132,7 +132,7 @@ def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, is
   # spacings
   fig.subplots_adjust(bottom=0.25)
 
-  # devider for cax
+  # divider for cax
   cax = make_axes_locatable(plt.gca()).append_axes('right', size='3%', pad='3%')
 
   # colorbar
@@ -173,6 +173,7 @@ def run_model_training(config: Config):
   # got flattened when writing parquet, restore shape now
   data["features"] = data["features"].apply(lambda x: x.reshape(features_shape))
 
+  # class weights
   class_weight = get_class_weight(data[data["split"] == "train"])
   train_ds, valid_ds, reference_ds = make_tf_datasets(
     data,
@@ -183,7 +184,7 @@ def run_model_training(config: Config):
     config.model_training.batch_size
   )
 
-  # model creatino
+  # model creation
   model = create_model((*features_shape, 1), num_output_classes=len(class_dict))
 
   # model training

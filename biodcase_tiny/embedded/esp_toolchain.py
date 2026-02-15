@@ -5,10 +5,10 @@ import logging
 import os
 import shutil
 import sys
+import docker
+
 from pathlib import Path
 from typing import Optional
-
-import docker
 from tqdm import tqdm
 
 # logger
@@ -16,7 +16,7 @@ logger = logging.getLogger("biodcase_tiny")
 logger.setLevel(logging.INFO)
 
 
-class ESP_IDF_v5_2:
+class ESPToolchain:
   """
   esp toolchain - idf docker
   """
@@ -66,10 +66,13 @@ class ESP_IDF_v5_2:
     )
 
 
-  def set_target(self, src_path: Path, target="esp32"):
+  def set_target(self, src_path: Path, target='esp32-s3'):
     """
     compile for esp
     """
+
+    # assertions
+    assert target in ['esp32-s3'], "Sorry we do not support your selected target: [{}]".format(target)
 
     # create container
     container = self._create_container(

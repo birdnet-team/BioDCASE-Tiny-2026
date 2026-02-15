@@ -25,11 +25,11 @@ from paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, GEN_CODE_DIR, TFLITE
 [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
 
 from biodcase_tiny.embedded.esp_target import ESPTarget
-from biodcase_tiny.embedded.esp_toolchain import ESP_IDF_v5_2
+from biodcase_tiny.embedded.esp_toolchain import ESPToolchain
 from biodcase_tiny.feature_extraction.feature_extraction import make_constants
 
 
-def run_embedded_code_generation(config: Config, model_path: Path = KERAS_MODEL_PATH, reference_dataset_path: Path = REFERENCE_DATASET_PATH, tflite_model_path: Path = TFLITE_MODEL_PATH, gen_code_dir: Path = GEN_CODE_DIR, quantize: bool = False):
+def run_embedded_code_generation(config: Config, model_path: Path, reference_dataset_path: Path, tflite_model_path: Path, gen_code_dir: Path, quantize: bool = False):
   """
   embedded code generation
   """
@@ -56,12 +56,10 @@ def run_embedded_code_generation(config: Config, model_path: Path = KERAS_MODEL_
   # info
   print("\nTarget creation:")
 
-  # target createion
+  # target creation, validation, and saving of tflite model
   target = ESPTarget(model, feature_config, reference_dataset, quantize=quantize)
   target.validate()
-
-  # tflite model to buffer
-  with tflite_model_path.open("wb") as f: f.write(target.get_model_buf())
+  target.save_tflite_model(tflite_model_path)
 
   # source path
   src_path = gen_code_dir / "src"
@@ -74,12 +72,12 @@ def run_embedded_code_generation(config: Config, model_path: Path = KERAS_MODEL_
   print("\nCode Compilation:")
 
   # toolchain: compile, flash, and monitor
-  toolchain = ESP_IDF_v5_2(config.embedded_code_generation.serial_device)
+  toolchain = ESPToolchain(config.embedded_code_generation.serial_device)
   #toolchain.set_target(src_path=src_path)
   toolchain.compile(src_path=src_path)
 
   # info
-  print("Embedded code has been successfully generated!")
+  print("Embedded code has successfully been generated!")
 
 
 if __name__ == '__main__':
@@ -91,4 +89,5 @@ if __name__ == '__main__':
   config = load_config()
 
   # run embedded code generation
-  run_embedded_code_generation(config)
+  #run_embedded_code_generation(config)
+  run_embedded_code_generation(config, model_path=KERAS_MODEL_PATH, reference_dataset_path=REFERENCE_DATASET_PATH, tflite_model_path=TFLITE_MODEL_PATH, gen_code_dir=GEN_CODE_DIR)

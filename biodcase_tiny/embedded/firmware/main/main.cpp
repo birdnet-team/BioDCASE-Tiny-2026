@@ -65,9 +65,7 @@ constexpr uint32_t kRandomSeed = 0xFB;
 constexpr size_t kTensorArenaSize = 6000000;
 uint8_t* tensor_arena;
 
-
-void SetRandomInput(const uint32_t random_seed,
-                    tflite::MicroInterpreter& interpreter) {
+void SetRandomInput(const uint32_t random_seed, tflite::MicroInterpreter& interpreter) {
   std::mt19937 eng(random_seed);
   std::uniform_int_distribution<uint32_t> dist(0, 255);
 
@@ -81,7 +79,6 @@ void SetRandomInput(const uint32_t random_seed,
     }
   }
 }
-
 
 void SetRandomInput(const uint32_t random_seed, std::span<int16_t> audio_buf) {
   std::mt19937 eng(random_seed);
@@ -163,24 +160,31 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
 
   tensor_arena = reinterpret_cast<uint8_t *>(heap_caps_malloc(kTensorArenaSize, MALLOC_CAP_SPIRAM));
 
+  // feature config profiling
   uint32_t event_handle = profiler.BeginEvent("GetFeatureConfig");
+
+  // get feature config (flatbuffer)
   const FeatureConfigs::FeatureConfig* fc = FeatureConfigs::GetFeatureConfig(feature_extractor_data);
   profiler.EndEvent(event_handle);
 
   auto audio_n_samples = fc->hanning_window()->size();
   MicroPrintf("N audio samples: %d", audio_n_samples);
   auto audio_win_arr = (int16_t*) heap_caps_aligned_alloc(16, audio_n_samples * sizeof(int16_t) * 2, MALLOC_CAP_DEFAULT);
-  std::span audio_win = {audio_win_arr, audio_n_samples * 2};  // *2 because complex numbers assumed
-  std::span scratch_buffer = {
-    reinterpret_cast<uint8_t*>(audio_win.data()), audio_win.size() * sizeof(int16_t)};
-  std::span out_buffer = {
-    reinterpret_cast<int8_t*>(audio_win.data()), audio_win.size() * sizeof(int16_t)};
+
+  // *2 because complex numbers assumed
+  std::span audio_win = {audio_win_arr, audio_n_samples * 2};
+  std::span scratch_buffer = {reinterpret_cast<uint8_t*>(audio_win.data()), audio_win.size() * sizeof(int16_t)};
+  std::span out_buffer = {reinterpret_cast<int8_t*>(audio_win.data()), audio_win.size() * sizeof(int16_t)};
+
+  // init feature extraction
   init_feature_extraction(fc);
 
+  // model profiling
   event_handle = profiler.BeginEvent("tflite::GetModel");
   const tflite::Model* model = tflite::GetModel(model_data);
   profiler.EndEvent(event_handle);
 
+  // op resolver?
   event_handle = profiler.BeginEvent("tflite::CreateOpResolver");
   TflmOpResolver op_resolver;
   status = CreateOpResolver(op_resolver);
@@ -191,14 +195,15 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
   }
   profiler.EndEvent(event_handle);
 
+  // interpreter profiling?
   event_handle = profiler.BeginEvent("tflite::MicroInterpreter instantiation");
   tflite::RecordingMicroInterpreter interpreter(
       model, op_resolver, tensor_arena, kTensorArenaSize, nullptr,
       &profiler);
   profiler.EndEvent(event_handle);
-  //
-  event_handle =
-      profiler.BeginEvent("tflite::MicroInterpreter::AllocateTensors");
+
+  // tensor allocation
+  event_handle = profiler.BeginEvent("tflite::MicroInterpreter::AllocateTensors");
   status = interpreter.AllocateTensors();
   if (status != kTfLiteOk) {
     MicroPrintf("tflite::MicroInterpreter::AllocateTensors failed");
@@ -208,7 +213,8 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
   profiler.LogTicksPerTagCsv();
   profiler.ClearEvents();
 
-  MicroPrintf("");  // null MicroPrintf serves as a newline.
+  // null MicroPrintf serves as a newline.
+  MicroPrintf("");
 
   // For streaming models, the interpreter will return kTfLiteAbort if the
   // model does not yet have enough data to make an inference. As such, we
@@ -233,7 +239,7 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
     seed++;
 
     ShowInputCRC32(&interpreter);
-    MicroPrintf("");  // null MicroPrintf serves as a newline.
+    MicroPrintf("");
 
     status = interpreter.Invoke();
     if ((status != kTfLiteOk) && (static_cast<int>(status) != kTfLiteAbort)) {
@@ -242,13 +248,13 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
     }
 
     profiler.Log();
-    MicroPrintf("");  // null MicroPrintf serves as a newline.
+    MicroPrintf("");
     profiler.LogTicksPerTagCsv();
-    MicroPrintf("");  // null MicroPrintf serves as a newline.
+    MicroPrintf("");
     profiler.ClearEvents();
 
     ShowOutputCRC32(&interpreter);
-    MicroPrintf("");  // null MicroPrintf serves as a newline.
+    MicroPrintf("");
 
     if (status == kTfLiteOk) {
       break;
@@ -270,4 +276,3 @@ extern "C" void app_main() {
   auto res = tflite::Benchmark(g_model, feature_config);
   MicroPrintf("Result=%d", res);
 }
-

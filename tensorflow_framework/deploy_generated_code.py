@@ -10,7 +10,7 @@ from paths import GEN_CODE_DIR
 # required package paths
 [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
 
-from biodcase_tiny.embedded.esp_toolchain import ESP_IDF_v5_2
+from biodcase_tiny.embedded.esp_toolchain import ESPToolchain
 
 
 def run_deploy_generated_code(config: Config, gen_code_dir: Path = GEN_CODE_DIR):
@@ -26,7 +26,7 @@ def run_deploy_generated_code(config: Config, gen_code_dir: Path = GEN_CODE_DIR)
   src_path.mkdir(exist_ok=True)
 
   # toolchain: compile, flash, and monitor
-  toolchain = ESP_IDF_v5_2(config.embedded_code_generation.serial_device)
+  toolchain = ESPToolchain(config.embedded_code_generation.serial_device)
   #toolchain.compile(src_path=src_path)
   toolchain.flash(src_path=src_path)
   toolchain.monitor(src_path=src_path)
