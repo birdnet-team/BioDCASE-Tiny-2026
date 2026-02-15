@@ -7,6 +7,7 @@ import torch
 import yaml
 import numpy as np
 import soundfile
+import gzip
 
 from pathlib import Path
 
@@ -127,6 +128,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       'test_folder': 'test',
 
       # other flags
+      'redo': False,
       'verbose': False,
       'to_torch': True,
       }
@@ -141,7 +143,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
 
     # already processed return empty list
-    if any([f for f in self.intermediate_path.glob('**/*') if f.is_file()]) and not self.cfg['intermediate']['redo']: return []
+    if any([f for f in self.intermediate_path.glob('**/*') if f.is_file()]) and not self.cfg['intermediate']['redo'] and not self.cfg['redo']: return []
 
     # info
     self.cfg['verbose']: print("Create intermediate to: ", self.intermediate_path)
@@ -168,10 +170,15 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       # to int16 conversion for serialization
       audio_array_int16 = (audio_array * np.iinfo(np.int16).max).astype(np.int16)
 
-      print(file)
-      print(out_file_path)
-      print(audio_array_int16)
+      # open compression file, save and close
+      f = gzip.GzipFile(str(out_file_path) + '.gz', "w")
+      np.save(file=f, arr=audio_array_int16)
+      f.close()
+
+      # save
+      np.save(str(out_file_path) + '.npy', audio_array_int16)
       stop
+
 
 
   def caching(self):
@@ -473,7 +480,7 @@ if __name__ == '__main__':
   cfg = yaml.safe_load(open("./config.yaml"))
 
   # datamodule
-  datamodule = DatamoduleTinyMl(cfg['datamodule'])
+  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo=True)
   datamodule.info()
 
   # train dataset
