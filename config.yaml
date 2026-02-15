@@ -4,17 +4,48 @@
 # version id
 version: 0.1
 
-# dataset
-dataset:
+# datamodule
+datamodule:
 
-  # root path
-  root_path: /to/dataset
-  cache_path: /to/cached
+  # dataset
+  dataset:
+    #root_path: '/path/to/the/downloaded/dataset'
+    root_path: '/world/dekutree/datasets/biodcase2026_task3_tiny_ml/raw/'
+    file_ext: '.wav'
+
+  # intermediate
+  intermediate:
+    root_path: './output/01_intermediate'
+    intermediate_id: 'intermediate0'
+    redo: False
+    filter_files: {'is_used': False, 're_contains': '.*'}
+    file_naming: {'target_file_ext': '.wav', 'method': 'keeping_parent_folder'}
+
+  # caching
+  caching:
+    root_path: './output/02_features'
+    cache_id: 'cache0'
+    redo: False
+    filter_files: {'is_used': False, 're_contains': '.*'}
+    file_naming: {'target_file_ext': '.npz', 'method': 'parent_folder_to_filename'}
+
+    # todo:
+    # add feature extraction module
+    # feature_extraction:
+    #   module: 'feature_extractions.xxx'
+    #   attr: 'SoundFeatures'
+
+  load_cache:
+    load_on_init: True
+    filter_files: {'is_used': False, 're_contains': '.*'}
 
   # folder structure, splits
-  train_folder: train
-  validation_folder: validation
-  test_folder: test
+  train_folder: 'train'
+  validation_folder: 'validation'
+  test_folder: 'test'
+
+  verbose: False
+  to_torch: True
 
 
 # pipeline

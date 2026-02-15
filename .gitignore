@@ -2,7 +2,7 @@
 # gitignore biodcase tiny ml
 
 # output directory
-your_output/
+output/
 
 # virtual env
 .venv

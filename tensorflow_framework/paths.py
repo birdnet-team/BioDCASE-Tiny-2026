@@ -2,7 +2,7 @@ from pathlib import Path
 
 PIPELINE_CONFIG_FILE = Path(__file__).parent / "pipeline_config.yaml"
 
-OUT_DIR = Path(__file__).parent / 'your_output'
+OUT_DIR = Path(__file__).parent / 'output'
 
 RAW_OUT_DIR = OUT_DIR / "00_raw"
 
