@@ -49,12 +49,12 @@ datamodule:
     #   attr: 'SoundFeatures'
 
   load_cache:
-    load_on_init: True
+    load_on_init: False
     filter_files: {'is_used': False, 're_contains': '.*'}
 
   # folder structure, splits
   train_folder: 'train'
-  validation_folder: 'validation'
+  validation_folder: 'val'
   test_folder: 'test'
 
   redo: False

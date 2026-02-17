@@ -72,6 +72,9 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     # load cache
     if self.cfg['load_cache']['load_on_init']: self.load_cache()
 
+    # todo:
+    # restructure flattened array to origin shape
+
 
   def __len__(self):
     return self.length
@@ -129,7 +132,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
         'compress': True,
         },
       'load_cache': {
-        'load_on_init': True,
+        'load_on_init': False,
         'filter_files': {'is_used': False, 're_contains': '.*'},
         },
 
@@ -322,24 +325,21 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
     train datraset loading, overwrite
     """
-    print("No train dataset available")
-    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': 'train'})
+    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': self.cfg['train_folder']})
 
 
   def load_validation_dataset(self):
     """
     train datraset loading, overwrite
     """
-    print("No validation dataset available")
-    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': 'validation'})
+    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': self.cfg['validation_folder']})
 
 
   def load_test_dataset(self):
     """
     train datraset loading, overwrite
     """
-    print("No test dataset available")
-    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': 'test'})
+    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': self.cfg['test_folder']})
 
 
   def file_naming_by_config(self, cfg_file_naming, input_file, target_path, file_root_dir, file_name_addon='', overwrite_file_ext=None):
