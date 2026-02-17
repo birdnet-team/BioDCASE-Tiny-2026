@@ -27,7 +27,7 @@ class FeatureConstants:
   mel_constants: FilterBankConstants
 
 
-def make_constants(win_samples, sample_rate,  window_scaling_bits, mel_n_channels, mel_low_hz, mel_high_hz, mel_post_scaling_bits):
+def make_constants(win_samples, sample_rate, window_scaling_bits, mel_n_channels, mel_low_hz, mel_high_hz, mel_post_scaling_bits):
   """
   constants for feature extraction, e.g. mel bands
   """

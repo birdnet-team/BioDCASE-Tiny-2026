@@ -3,6 +3,7 @@
 
 dask
 docker
+flatbuffers
 jinja2
 librosa
 keras

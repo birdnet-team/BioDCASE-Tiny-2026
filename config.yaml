@@ -7,6 +7,18 @@ version: 0.1
 # datamodule
 datamodule:
 
+  # data properties
+  target_audio_slice_duration_ms: 3000
+  target_sample_rate: 24000
+  feature_extraction:
+    window_len: 4096
+    window_stride: 512
+    window_scaling_bits: 12
+    mel_n_channels: 40
+    mel_low_hz: 125
+    mel_high_hz: 7500
+    mel_post_scaling_bits: 6
+
   # dataset
   dataset:
     root_path: '/path/to/the/downloaded/dataset'
@@ -18,7 +30,8 @@ datamodule:
     intermediate_id: 'intermediate0'
     redo: False
     filter_files: {'is_used': False, 're_contains': '.*'}
-    file_naming: {'target_file_ext': '.wav', 'method': 'keeping_parent_folder'}
+    file_naming: {'target_file_ext': '.npz', 'method': 'keeping_parent_folder'}
+    compress: True
 
   # caching
   caching:
@@ -27,6 +40,7 @@ datamodule:
     redo: False
     filter_files: {'is_used': False, 're_contains': '.*'}
     file_naming: {'target_file_ext': '.npz', 'method': 'parent_folder_to_filename'}
+    compress: True
 
     # todo:
     # add feature extraction module
@@ -43,8 +57,15 @@ datamodule:
   validation_folder: 'validation'
   test_folder: 'test'
 
+  redo: False
   verbose: False
   to_torch: True
+
+
+# dataloader kwargs (for pytorch dataloader)
+dataloader_kwargs:
+  batch_size: 64
+  shuffle: true
 
 
 # pipeline

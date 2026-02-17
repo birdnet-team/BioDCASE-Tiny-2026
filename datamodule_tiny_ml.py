@@ -8,6 +8,7 @@ import yaml
 import numpy as np
 import soundfile
 import gzip
+import functools
 
 from pathlib import Path
 
@@ -42,6 +43,8 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     self.classes = None
     self.intermediate_info = {}
     self.cache_info = {}
+    self.feature_constants = None
+    self.do_windows_fn = None
 
     # assertions
     assert Path(self.cfg['dataset']['root_path']).is_dir(), "***No dataset root path exists: [{}]".format(self.cfg['dataset']['root_path'])
@@ -94,6 +97,17 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     # default config
     cfg_default = {
       'add_python_paths': [],
+      'target_audio_slice_duration_ms': 3000,
+      'target_sample_rate': 24000,
+      'feature_extraction': {
+        'window_len': 4096,
+        'window_stride': 512,
+        'window_scaling_bits': 12,
+        'mel_n_channels': 40,
+        'mel_low_hz': 125,
+        'mel_high_hz': 7500,
+        'mel_post_scaling_bits': 6,
+        },
       'dataset': {
         'root_path': '/path/to/the/downloaded/dataset',
         'file_ext': '.wav',
@@ -103,7 +117,8 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
         'intermediate_id': 'intermediate0',
         'redo': False,
         'filter_files': {'is_used': False, 're_contains': '.*'},
-        'file_naming': {'target_file_ext': '.wav', 'method': 'keeping_parent_folder'},
+        'file_naming': {'target_file_ext': '.npz', 'method': 'keeping_parent_folder'},
+        'compress': True,
         },
       'caching': {
         'root_path': './output/02_features',
@@ -111,11 +126,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
         'redo': False,
         'filter_files': {'is_used': False, 're_contains': '.*'},
         'file_naming': {'target_file_ext': '.npz', 'method': 'parent_folder_to_filename'},
-        # add feature extraction module
-        # 'feature_extraction': {
-        #   'module': 'feature_extractions.xxx',
-        #   'attr': 'SoundFeatures',
-        #   },
+        'compress': True,
         },
       'load_cache': {
         'load_on_init': True,
@@ -157,28 +168,32 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # filter files
     files = self.filter_files_with_config(files, self.cfg['intermediate']['filter_files'])
-      
+    
+    # intermediate info
+    self.intermediate_info.update({'intermediate_file_to_dataset_file': {}})
+
     # process files
     for file in files:
 
       # out file
       out_file_path = self.file_naming_by_config(self.cfg['intermediate']['file_naming'], file, target_path=self.intermediate_path, file_root_dir=self.dataset_path)
+      self.intermediate_info['intermediate_file_to_dataset_file'].update({str(out_file_path): str(file)})
 
       # read audio
       audio_array, sample_rate = soundfile.read(file)
 
+      # assert len and fs
+      assert int(len(audio_array) / sample_rate * 1000) == self.cfg['target_audio_slice_duration_ms'], "Audio file: [{}] has ms: [{}] and should be: [{}]".format(file, int(len(audio_array) / sample_rate * 1000), self.cfg['target_audio_slice_duration_ms'])
+      assert sample_rate == self.cfg['target_sample_rate'], "Audio file: [{}] has sample rate: [{}] and should be: [{}]".format(file, sample_rate, self.cfg['target_sample_rate'])
+
       # to int16 conversion for serialization
       audio_array_int16 = (audio_array * np.iinfo(np.int16).max).astype(np.int16)
 
-      # open compression file, save and close
-      f = gzip.GzipFile(str(out_file_path) + '.gz', "w")
-      np.save(file=f, arr=audio_array_int16)
-      f.close()
+      # save function (compress?)
+      f_save = np.savez_compressed if self.cfg['intermediate']['compress'] else np.savez
 
-      # save
-      np.save(str(out_file_path) + '.npy', audio_array_int16)
-      stop
-
+      # save file
+      f_save(file=out_file_path, x=audio_array_int16, fs=sample_rate)
 
 
   def caching(self):
@@ -187,10 +202,10 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
 
     # already cached (simple statement)
-    if any([f for f in self.cached_path.glob('**/*') if f.is_file()]) and not self.cfg['caching']['redo']: return
+    if any([f for f in self.cached_path.glob('**/*') if f.is_file()]) and not self.cfg['caching']['redo'] and not self.cfg['redo']: return
 
     # info
-    print("Caching features to: ", self.cached_path)
+    self.cfg['verbose']: print("Caching features to: ", self.cached_path)
 
     # clean directory
     [(print("cache remove: ", f) if self.cfg['verbose'] else None, f.unlink()) for f in self.cached_path.glob('**/*') if f.is_file()]
@@ -206,7 +221,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     self.label_dict = self.at_caching_extract_label_dict_from_files(files)
 
     # cache info
-    self.cache_info = {'label_dict': {**self.label_dict}, 'feature_sizes': [], 'target_sizes': [], 'files': {'dataset': [], 'cached': []}, 'cfg_caching': self.cfg['caching']}
+    self.cache_info = {'label_dict': {**self.label_dict}, 'feature_sizes': [], 'target_sizes': [], 'files': {'dataset': [], 'intermediate': [], 'cached': []}, 'cfg_caching': self.cfg['caching']}
 
     # cache info
     self.at_caching_add_something_before_file_processing()
@@ -226,14 +241,18 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       # cache info update
       self.cache_info['feature_sizes'].append(list(x.shape))
       self.cache_info['target_sizes'].append(list(y.shape))
-      self.cache_info['files']['dataset'].append(str(file))
       self.cache_info['files']['cached'].append(str(out_file_path))
+      self.cache_info['files']['intermediate'].append(str(file))
+      self.cache_info['files']['dataset'].append(self.intermediate_info['intermediate_file_to_dataset_file'][str(file)])
 
       # info
       if self.cfg['verbose']: print("cached file saved to: ", out_file_path)
 
-      # save
-      np.savez(out_file_path, x=x, y=y)
+      # save function (compress?)
+      f_save = np.savez_compressed if self.cfg['caching']['compress'] else np.savez
+
+      # save file
+      f_save(file=out_file_path, x=x, y=y)
 
     # add something after file processing
     self.at_caching_add_something_after_file_processing()
@@ -400,6 +419,95 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     return cache_label_dict
 
 
+  def at_caching_extract_label_from_file(self, file):
+    """
+    extract label from file (overwrite this)
+    """
+    return file.parent.stem
+
+
+  def at_caching_add_something_before_file_processing(self):
+    """
+    add something before file processing
+    """
+
+    # packages for feature extraction
+    from biodcase_tiny.feature_extraction.feature_extraction import process_window, make_constants
+    from numpy.lib.stride_tricks import sliding_window_view
+
+    # add more cache info
+    self.cache_info.update({'x_len': [], 'fs': [], 'feature_sizes_origin': []})
+
+    # feature constants
+    self.feature_constants = make_constants(
+      win_samples=self.cfg['feature_extraction']['window_len'],
+      sample_rate=self.cfg['target_sample_rate'],
+      window_scaling_bits=self.cfg['feature_extraction']['window_scaling_bits'],
+      mel_n_channels=self.cfg['feature_extraction']['mel_n_channels'],
+      mel_low_hz=self.cfg['feature_extraction']['mel_low_hz'],
+      mel_high_hz=self.cfg['feature_extraction']['mel_high_hz'],
+      mel_post_scaling_bits=self.cfg['feature_extraction']['mel_post_scaling_bits'],
+    )
+
+    # window function
+    apply_windowed = lambda data, window_len, window_stride, fn: np.array([fn(row) for row in sliding_window_view(data, window_len)[::window_stride]])
+
+    # this partial stuff is just a way to set all config parameters, so we have a function that only takes data as input
+    self.do_windows_fn = functools.partial(
+      apply_windowed,
+      window_len=self.cfg['feature_extraction']['window_len'],
+      window_stride=self.cfg['feature_extraction']['window_stride'],
+      fn=functools.partial(
+        process_window,
+        hanning=self.feature_constants.hanning_window,
+        mel_constants=self.feature_constants.mel_constants,
+        fft_twiddle=self.feature_constants.fft_twiddle,
+        window_scaling_bits=self.feature_constants.window_scaling_bits,
+        mel_post_scaling_bits=self.feature_constants.mel_post_scaling_bits
+      ),
+    )
+
+
+  def at_caching_add_something_after_file_processing(self):
+    """
+    add something after file processing (overwrite this)
+    """
+    pass
+    #self.cache_info.update({'feature_params': {**self.feature_extraction.get_feature_kwargs(), **{k: v.tolist() for k, v in self.feature_extraction.get_pre_computes().items() if k in ['mel_frequencies']}, **self.feature_extraction.get_cfg()}})
+
+
+  def at_caching_extract_target_from_file(self, file):
+    """
+    extract target from file (overwrite this)
+    """
+    return np.array([self.label_dict[file.parent.stem]])
+
+
+  def at_caching_extract_features_from_file(self, file):
+    """
+    extract features from file
+    """
+
+    # load file
+    data = np.load(str(file))
+    x, fs = data['x'], data['fs']
+
+    # add cache info
+    self.cache_info['x_len'].append(len(x))
+    self.cache_info['fs'].append(int(fs))
+
+    # compute features
+    features = self.do_windows_fn(x).astype(np.float32)
+
+    # origin sizes
+    self.cache_info['feature_sizes_origin'].append(list(features.shape))
+
+    # flatten
+    features = features.flatten()
+
+    return features
+
+
   def at_load_cache_allocate_memory_before_adding_data(self, num_cached_files):
     """
     memory allocation (overwrite this)
@@ -418,41 +526,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     return x
 
 
-  def at_caching_extract_label_from_file(self, file):
-    """
-    extract label from file (overwrite this)
-    """
-    return 'label'
-
-
-  def at_caching_add_something_before_file_processing(self):
-    """
-    add something before file processing (overwrite this)
-    """
-    pass
-
-
-  def at_caching_add_something_after_file_processing(self):
-    """
-    add something after file processing (overwrite this)
-    """
-    pass
-
-
-  def at_caching_extract_target_from_file(self, file):
-    """
-    extract target from file (overwrite this)
-    """
-    return np.array([0])
-
-
-  def at_caching_extract_features_from_file(self, file):
-    """
-    extract features from file (overwrite this)
-    """
-    return np.array([0])
-
-
   def info(self):
     """
     info
@@ -466,7 +539,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
   def get_cache_info(self): return self.cache_info
   def get_cache_info_from_cached_folder(self): return yaml.safe_load(open(str(self.cached_path / 'cache_info.yaml')))
   def get_targets(self): return np.squeeze(self.targets)
-  def get_file_names_by_single_sid(self, sid): return [self.cache_info['files']['dataset'][sid], self.cache_info['files']['cached'][sid]]
+  def get_file_names_by_single_sid(self, sid): return [self.cache_info['files']['dataset'][sid], self.cache_info['files']['intermediate'][sid], self.cache_info['files']['cached'][sid]]
   def get_file_name_id_by_single_sid(self, sid): return Path(self.get_file_names_by_single_sid(sid)[-1]).stem
 
 
@@ -480,7 +553,7 @@ if __name__ == '__main__':
   cfg = yaml.safe_load(open("./config.yaml"))
 
   # datamodule
-  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo=True)
+  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo=False)
   datamodule.info()
 
   # train dataset
