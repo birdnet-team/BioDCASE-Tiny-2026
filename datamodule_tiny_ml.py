@@ -157,10 +157,14 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
 
     # already processed return empty list
-    if any([f for f in self.intermediate_path.glob('**/*') if f.is_file()]) and not self.cfg['intermediate']['redo'] and not self.cfg['redo']: return []
+    if any([f for f in self.intermediate_path.glob('**/*') if f.is_file()]) and not self.cfg['intermediate']['redo'] and not self.cfg['redo']: 
+
+      # intermediate info - needed for further processing
+      self.intermediate_info = yaml.safe_load(open(str(self.intermediate_path / 'intermediate_info.yaml')))
+      return
 
     # info
-    self.cfg['verbose']: print("Create intermediate to: ", self.intermediate_path)
+    print("Datamodule - Create intermediate to: ", self.intermediate_path)
 
     # clean directory
     [(print("remove file: ", f) if self.cfg['verbose'] else None, f.unlink()) for f in self.intermediate_path.glob('**/*') if f.is_file()]
@@ -198,6 +202,9 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       # save file
       f_save(file=out_file_path, x=audio_array_int16, fs=sample_rate)
 
+    # save intermediate info
+    yaml.dump(self.intermediate_info, open(self.intermediate_path / 'intermediate_info.yaml', 'w'))
+
 
   def caching(self):
     """
@@ -208,7 +215,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     if any([f for f in self.cached_path.glob('**/*') if f.is_file()]) and not self.cfg['caching']['redo'] and not self.cfg['redo']: return
 
     # info
-    self.cfg['verbose']: print("Caching features to: ", self.cached_path)
+    print("Datamodule - Caching features to: ", self.cached_path)
 
     # clean directory
     [(print("cache remove: ", f) if self.cfg['verbose'] else None, f.unlink()) for f in self.cached_path.glob('**/*') if f.is_file()]

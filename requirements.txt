@@ -10,3 +10,4 @@ numba
 pyyaml
 soundfile
 torch
+torchinfo
