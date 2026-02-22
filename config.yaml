@@ -42,12 +42,7 @@ datamodule:
     file_naming: {'target_file_ext': '.npz', 'method': 'parent_folder_to_filename'}
     compress: True
 
-    # todo:
-    # add feature extraction module
-    # feature_extraction:
-    #   module: 'feature_extractions.xxx'
-    #   attr: 'SoundFeatures'
-
+  # load cache
   load_cache:
     load_on_init: False
     filter_files: {'is_used': False, 're_contains': '.*'}
@@ -57,6 +52,8 @@ datamodule:
   validation_folder: 'val'
   test_folder: 'test'
 
+  # other flags
+  add_channel_dimension: True
   redo: False
   verbose: False
   to_torch: True

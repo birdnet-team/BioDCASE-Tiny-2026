@@ -8,8 +8,7 @@ from numpy.typing import NDArray
 import biodcase_tiny.feature_extraction.feature_config_generated as feature_config
 from biodcase_tiny.feature_extraction.nb_fft import gen_twiddle, dsps_fft2r_sc16_ansi, do_fft
 from biodcase_tiny.feature_extraction.nb_log32 import log32, vec_log32
-from biodcase_tiny.feature_extraction.nb_mel import _init_filter_bank_weights, FILTER_BANK_ALIGNMENT, \
-  FILTER_BANK_CHANNEL_BLOCK_SIZE, filter_bank, FilterBankConstants
+from biodcase_tiny.feature_extraction.nb_mel import _init_filter_bank_weights, FILTER_BANK_ALIGNMENT, FILTER_BANK_CHANNEL_BLOCK_SIZE, filter_bank, FilterBankConstants
 
 from biodcase_tiny.feature_extraction.nb_isqrt import vec_sqrt64
 from biodcase_tiny.feature_extraction.nb_shift_scale import shift_scale_up, shift_scale_down

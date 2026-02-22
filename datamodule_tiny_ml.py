@@ -142,6 +142,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       'test_folder': 'test',
 
       # other flags
+      'add_channel_dimension': True,
       'redo': False,
       'verbose': False,
       'to_torch': True,
@@ -231,7 +232,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     self.label_dict = self.at_caching_extract_label_dict_from_files(files)
 
     # cache info
-    self.cache_info = {'label_dict': {**self.label_dict}, 'feature_sizes': [], 'target_sizes': [], 'files': {'dataset': [], 'intermediate': [], 'cached': []}, 'cfg_caching': self.cfg['caching']}
+    self.cache_info = {'label_dict': {**self.label_dict}, 'feature_size': None, 'target_size': None, 'files': {'dataset': [], 'intermediate': [], 'cached': []}}
 
     # cache info
     self.at_caching_add_something_before_file_processing()
@@ -249,8 +250,14 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       out_file_path = self.file_naming_by_config(self.cfg['caching']['file_naming'], file, self.cached_path, file_root_dir=self.intermediate_path)
 
       # cache info update
-      self.cache_info['feature_sizes'].append(list(x.shape))
-      self.cache_info['target_sizes'].append(list(y.shape))
+      if self.cache_info['feature_size'] is None: self.cache_info['feature_size'] = list(x.shape)
+      if self.cache_info['target_size'] is None: self.cache_info['target_size'] = list(y.shape)
+
+      # assertions
+      assert self.cache_info['feature_size'] == list(x.shape)
+      assert self.cache_info['target_size'] == list(y.shape)
+
+      # add files
       self.cache_info['files']['cached'].append(str(out_file_path))
       self.cache_info['files']['intermediate'].append(str(file))
       self.cache_info['files']['dataset'].append(self.intermediate_info['intermediate_file_to_dataset_file'][str(file)])
@@ -443,7 +450,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     from numpy.lib.stride_tricks import sliding_window_view
 
     # add more cache info
-    self.cache_info.update({'x_len': [], 'fs': [], 'feature_sizes_origin': []})
+    self.cache_info.update({'x_len': None, 'fs': None, 'feature_size_origin': None})
 
     # feature constants
     self.feature_constants = make_constants(
@@ -479,8 +486,10 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
     add something after file processing (overwrite this)
     """
-    pass
-    #self.cache_info.update({'feature_params': {**self.feature_extraction.get_feature_kwargs(), **{k: v.tolist() for k, v in self.feature_extraction.get_pre_computes().items() if k in ['mel_frequencies']}, **self.feature_extraction.get_cfg()}})
+    self.cache_info.update({
+      'feature_extraction': self.cfg['feature_extraction'],
+      'sample_rate': self.cfg['target_sample_rate'],
+      })
 
 
   def at_caching_extract_target_from_file(self, file):
@@ -499,15 +508,18 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     data = np.load(str(file))
     x, fs = data['x'], data['fs']
 
-    # add cache info
-    self.cache_info['x_len'].append(len(x))
-    self.cache_info['fs'].append(int(fs))
-
     # compute features
     features = self.do_windows_fn(x).astype(np.float32)
 
-    # origin sizes
-    self.cache_info['feature_sizes_origin'].append(list(features.shape))
+    # cache info update
+    if self.cache_info['x_len'] is None: self.cache_info['x_len'] = len(x)
+    if self.cache_info['fs'] is None: self.cache_info['fs'] = int(fs)
+    if self.cache_info['feature_size_origin'] is None: self.cache_info['feature_size_origin'] = list(features.shape)
+
+    # assertions
+    assert self.cache_info['x_len'] == len(x)
+    assert self.cache_info['fs'] == fs
+    assert self.cache_info['feature_size_origin'] == list(features.shape)
 
     # flatten
     features = features.flatten()
@@ -520,16 +532,27 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     memory allocation (overwrite this)
     """
 
+    # target feature shape
+    target_feature_shape = tuple(self.cache_info['feature_size_origin'])
+    if self.cfg['add_channel_dimension']: target_feature_shape = (1,) + target_feature_shape
+
     # allocate memory space
-    self.features = np.empty(shape=(num_cached_files,) + tuple(self.cache_info.get('feature_sizes')[0]), dtype=np.uint8)
+    self.features = np.empty(shape=(num_cached_files,) + target_feature_shape, dtype=np.float32)
     self.targets = np.empty(shape=(num_cached_files, 1), dtype=np.uint8)
     self.sample_ids = np.empty(shape=(num_cached_files, 1), dtype=np.uint32)
 
 
   def at_load_cache_process_features(self, x):
     """
-    postprocess cached data, e.g. format mismatches (overwrite this)
+    postprocess cached data, flattened array to original shape
     """
+
+    # reshape to original shape
+    x = x.reshape(self.cache_info['feature_size_origin'])
+
+    # add channel dimension (e.g. useful for cnn models)
+    if self.cfg['add_channel_dimension']: x = x[np.newaxis, :]
+
     return x
 
 
@@ -574,8 +597,8 @@ if __name__ == '__main__':
   # test loader
   x, y, sid = next(iter(dataloader))
 
-  print(x)
-  print(x.shape)
-  print(x.dtype)
-  print(y)
-  print(sid)
+  print("features: ", x)
+  print("feature shape: ", x.shape)
+  print("feature type: ", x.dtype)
+  print("targets: ", y)
+  print("sample ids: ", sid)

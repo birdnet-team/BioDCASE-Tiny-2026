@@ -32,4 +32,8 @@ if __name__ == '__main__':
   # test loader
   x, y, sid = next(iter(dataloader))
 
+  print(x)
+  print(x.shape)
+  print(x.dtype)
+  print("targets: ", y)
   print("sid: ", sid)
