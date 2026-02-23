@@ -12,35 +12,23 @@ class ModelTinyMl(ModelBase):
   model tiny ml - overwrite model base
   """
 
-  def cfg_init(self, **cfg_overwrites):
-    """
-    config init
-    """
-
-    # default config
-    cfg_default = {
-      'num_classes': 11,
-    }
-
-    # base cfg
-    super().cfg_init(**{**cfg_default, **cfg_overwrites})
-
-
-
   def define_network_structure(self):
     """
     define network structure
     """
 
+    # check input shape before, must be [channels, rows, cols]
+    assert len(self.cfg['input_shape']) == 3
+
     # conv layer 1
     self.layer1 = torch.nn.Sequential(
-      torch.nn.Conv2d(in_channels=self.cfg['input_shape'][0], out_channels=16, kernel_size=(32, 32), stride=(1, 1)),
+      torch.nn.Conv2d(in_channels=self.cfg['input_shape'][0], out_channels=16, kernel_size=(16, 16), stride=(1, 1)),
       torch.nn.ReLU(),
       )
     
     # conv layer 2
     self.layer2 = torch.nn.Sequential(
-      torch.nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(16, 16), stride=(1, 1)),
+      torch.nn.Conv2d(in_channels=16, out_channels=1, kernel_size=(8, 8), stride=(1, 1)),
       torch.nn.Dropout2d(p=0.25),
       torch.nn.MaxPool2d(kernel_size=(5, 5), stride=(5, 5)),
       torch.nn.ReLU(),
@@ -96,8 +84,8 @@ if __name__ == '__main__':
   y = torch.randint(0, num_classes-1, (num_samples,))
 
   # model
-  x = torch.randn(num_samples, 1, 128, 124)
-  model = ModelTinyMl(input_shape=tuple(x.shape[1:]), num_classes=num_classes)
+  x = torch.randn(num_samples, 1, 133, 40)
+  model = ModelTinyMl(cfg['model'], input_shape=tuple(x.shape[1:]), num_classes=num_classes)
   model.info()
 
   # data structure

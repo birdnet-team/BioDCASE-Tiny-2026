@@ -10,6 +10,8 @@ datamodule:
   # data properties
   target_audio_slice_duration_ms: 3000
   target_sample_rate: 24000
+
+  # feature extraction -> stored as cache
   feature_extraction:
     window_len: 4096
     window_stride: 512
@@ -52,6 +54,9 @@ datamodule:
   validation_folder: 'val'
   test_folder: 'test'
 
+  # load set on init, must be either 'train', 'validation', 'test'
+  load_set_on_init: Null
+
   # other flags
   add_channel_dimension: True
   redo: False
@@ -60,40 +65,42 @@ datamodule:
 
 
 # dataloader kwargs (for pytorch dataloader)
-dataloader_kwargs:
+dataloader_train_kwargs:
   batch_size: 64
   shuffle: true
 
+dataloader_validation_and_test_kwargs:
+  batch_size: 32
+  shuffle: false
 
-# pipeline
-pipeline:
 
-  # data preprocessing
-  data_preprocessing:
-    audio_slice_duration_ms: 3000
-    sample_rate: 16000
+# model
+model:
+  #'model_name': self.__class__.__name__
+  #input_shape: [32]
+  #num_classes: 11
+  save_path: './output/03_model'
+  device:
+    use_cpu: False
+    device_name: 'cuda:0'
+  criterion: {'module': 'torch.nn', 'attr': 'CrossEntropyLoss', 'kwargs': {}}
+  optimizer: {'module': 'torch.optim', 'attr': 'Adam', 'kwargs': {'lr': 0.001, 'betas': [0.9, 0.999]}}
+  verbose: False
 
-  # feature extraction
-  feature_extraction:
-    window_len: 4096
-    window_stride: 512
-    window_scaling_bits: 12
-    mel_n_channels: 40
-    mel_low_hz: 125
-    mel_high_hz: 7500
-    mel_post_scaling_bits: 6
+# model training
+model_training:
+  num_epochs: 20
 
-  # model training
-  model_training:
-    seed: 42
-    n_epochs: 20
-    shuffle_buff_n: 10000
-    batch_size: 128
-    early_stopping:
-      patience: 5
 
-  # embedded code
-  embedded_code_generation:
+# reports
+reports:
 
-    # replace with your serial device
-    serial_device: "/dev/ttyUSB0"
+  # report path
+  report_path: './output/04_reports'
+
+
+# embedded code
+embedded_code_generation:
+
+  # replace with your serial device
+  serial_device: "/dev/ttyUSB0"

@@ -25,9 +25,6 @@ class ModelBase(torch.nn.Module):
     # parent init
     super().__init__()
 
-    # add python paths
-    [sys.path.append(p) for p in self.cfg['add_python_paths'] if p not in sys.path]
-
     # members
     self.criterion = None
     self.optimizer = None
@@ -56,16 +53,12 @@ class ModelBase(torch.nn.Module):
     # default config
     cfg_default = {
       'model_name': self.__class__.__name__,
-      'add_python_paths': ['/world/dekutree/git/mypylib/'],
       'save_path': './output/03_model',
       'input_shape': [32],
-      'num_classes': 3,
-      'prediction_type': 'argmax_classification',
-      'prediction_types': ['pass_through', 'argmax_classification'],
+      'num_classes': 11,
       'device': {'use_cpu': False, 'device_name': 'cuda:0'},
       'criterion': {'module': 'torch.nn', 'attr': 'CrossEntropyLoss', 'kwargs': {}},
       'optimizer': {'module': 'torch.optim', 'attr': 'Adam', 'kwargs': {'lr': 0.0001, 'betas': [0.9, 0.999]}},
-      'use_early_stopping_criteria': True,
       'verbose': False
     }
 
@@ -207,6 +200,13 @@ class ModelBase(torch.nn.Module):
     model to tflite
     """
 
+    # info
+    print("\nSave tflite model!")
+
+    # # hide warnings of tensorflow
+    # import os
+    # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    # os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
     import litert_torch
 
     # to eval

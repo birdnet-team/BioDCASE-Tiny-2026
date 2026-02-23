@@ -43,6 +43,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     self.classes = None
     self.intermediate_info = {}
     self.cache_info = {}
+    self.load_info = {}
     self.feature_constants = None
     self.do_windows_fn = None
 
@@ -69,11 +70,20 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     # caching
     self.caching()
 
+    # load set on init
+    if self.cfg['load_set_on_init'] is not None:
+
+      # assertions
+      assert self.cfg['load_set_on_init'] in ['train', 'validation', 'test'], "load_set_on_init must be a string of one of: {}!".format(['train', 'validation', 'test'])
+
+      # load corresponding set
+      if self.cfg['load_set_on_init'] == 'train': self.load_train_dataset()
+      elif self.cfg['load_set_on_init'] == 'validation': self.load_validation_dataset()
+      elif self.cfg['load_set_on_init'] == 'test': self.load_test_dataset()
+      return
+
     # load cache
     if self.cfg['load_cache']['load_on_init']: self.load_cache()
-
-    # todo:
-    # restructure flattened array to origin shape
 
 
   def __len__(self):
@@ -140,6 +150,9 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       'train_folder': 'train',
       'validation_folder': 'validation',
       'test_folder': 'test',
+
+      # load set
+      'load_set_on_init': None,
 
       # other flags
       'add_channel_dimension': True,
@@ -296,7 +309,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       if not target_cached_path.exists(): raise ValueError('cach_id: {} does not exist in path: {}!'.format(cache_id, self.cached_path.parent))
 
     # info
-    print("{} load cache with id: [{}] ...".format(self.__class__.__name__, target_cached_path.name))
+    print("{} load cache with id: [{}] and filter: [{}] ...".format(self.__class__.__name__, target_cached_path.name, additional_file_filter_cfg['re_contains']))
 
     # cache info
     self.cache_info = yaml.safe_load(open(str(target_cached_path / 'cache_info.yaml')))
@@ -310,6 +323,9 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # additional filtering
     cached_files_filtered = self.filter_files_with_config(cached_files_filtered, additional_file_filter_cfg)
+
+    # load info
+    self.load_info = {'label_dict': {**self.label_dict}, 'feature_shape_at_load': None}
 
     # allocate memory
     self.at_load_cache_allocate_memory_before_adding_data(len(cached_files_filtered))
@@ -536,6 +552,9 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     target_feature_shape = tuple(self.cache_info['feature_size_origin'])
     if self.cfg['add_channel_dimension']: target_feature_shape = (1,) + target_feature_shape
 
+    # add feature shape at load
+    self.load_info.update({'feature_shape_at_load': target_feature_shape})
+
     # allocate memory space
     self.features = np.empty(shape=(num_cached_files,) + target_feature_shape, dtype=np.float32)
     self.targets = np.empty(shape=(num_cached_files, 1), dtype=np.uint8)
@@ -562,8 +581,16 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
     print("\n--\n{} info: ".format(self.__class__.__name__))
     print("label dict: ", self.get_label_dict())
+    if self.load_info.get('feature_shape_at_load') is not None: print("feature size at load: ", self.get_feature_shape_at_load())
     print("--\n")
 
+
+  def get_feature_shape_at_load(self):
+    """
+    feature shape at load
+    """
+    assert self.load_info.get('feature_shape_at_load') is not None, "Load data before asking about feature shape at load."
+    return self.load_info['feature_shape_at_load']
 
   def get_label_dict(self): return self.label_dict
   def get_cache_info(self): return self.cache_info
@@ -571,7 +598,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
   def get_targets(self): return np.squeeze(self.targets)
   def get_file_names_by_single_sid(self, sid): return [self.cache_info['files']['dataset'][sid], self.cache_info['files']['intermediate'][sid], self.cache_info['files']['cached'][sid]]
   def get_file_name_id_by_single_sid(self, sid): return Path(self.get_file_names_by_single_sid(sid)[-1]).stem
-
 
 
 if __name__ == '__main__':
@@ -583,13 +609,8 @@ if __name__ == '__main__':
   cfg = yaml.safe_load(open("./config.yaml"))
 
   # datamodule
-  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo=False)
+  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo=False, load_set_on_init='train')
   datamodule.info()
-
-  # train dataset
-  datamodule.load_train_dataset()
-  #datamodule.load_validation_dataset()
-  #datamodule.load_test_dataset()
 
   # loader
   dataloader = torch.utils.data.DataLoader(datamodule, **cfg['dataloader_kwargs'])

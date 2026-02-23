@@ -13,6 +13,5 @@ numpy
 numba
 pyyaml
 soundfile
-tensorflow
 torch
 torchinfo
