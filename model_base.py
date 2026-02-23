@@ -194,7 +194,30 @@ class ModelBase(torch.nn.Module):
     """
     save model
     """
+
+    # save as torch model
     torch.save(self.state_dict(), self.model_file_path)
+
+    # save as tflite model
+    self.save_model_to_tflite()
+
+
+  def save_model_to_tflite(self):
+    """
+    model to tflite
+    """
+
+    import litert_torch
+
+    # to eval
+    self.set_model_to_evaluation_mode()
+
+    # sample inputs
+    sample_inputs = (torch.randn((1,) + tuple(self.get_input_shape())),)
+
+    # model conversion
+    tflite_model = litert_torch.convert(self, sample_inputs)
+    tflite_model.export(self.model_file_path.with_suffix('.tflite').resolve())
 
 
   def load(self, model_file):
