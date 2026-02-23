@@ -41,7 +41,7 @@ class ModelTinyMl(ModelBase):
     self.output_layer = torch.nn.Sequential(
       torch.nn.Flatten(),
       torch.nn.Linear(flattened_shape.numel(), flattened_shape.numel()//4),
-      torch.nn.Dropout(p=0.5),
+      torch.nn.Dropout(p=0.25),
       torch.nn.ReLU(),
       torch.nn.Linear(flattened_shape.numel()//4, self.cfg['num_classes']),
       torch.nn.Softmax(dim=1),

@@ -8,7 +8,148 @@ import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, is_showing_plot=False, apply_argmax=False):
+def rescale_timeticks_iteratively(s, x):
+  """
+  rescale time ticks iteratively
+  """
+  assert len(s) == len(x)
+  if len(s) <= 20: return s, x
+  s, x = rescale_timeticks_iteratively(s[::2] , x[::2])
+  return s, x
+
+
+def add_time_to_axis(ax, num_samples, **kwargs):
+  """
+  add time to axis
+  """
+
+  # fs must be in kwargs
+  if 'fs' not in kwargs.keys(): return
+
+  # fs
+  fs = kwargs['fs']
+
+  # times
+  times = np.arange(0, num_samples) / fs
+
+  # time labels
+  s_times = np.arange(0, len(times))
+  x_times = ['{:.1f}'.format(ti) for ti in times]
+
+  # rescale timeticks
+  s_times, x_times = rescale_timeticks_iteratively(s_times, x_times)
+
+  # set axis
+  ax.set_xticks(s_times)
+  ax.set_xticklabels(x_times)
+  ax.set_xlabel('Time [s]')
+
+
+def add_frame_time_to_axis(ax, num_samples, **kwargs):
+  """
+  add time to axis
+  """
+
+  # requirements
+  #if not kwargs.get('feature_type') in ['spec', 'log_spec', 'log_mel_spec',  'cep', 'mfcc', 'recurrence_matrix']: return
+  if 'spec_fs' not in kwargs.keys(): return
+
+  # spec fs
+  spec_fs = kwargs['spec_fs']
+
+  # times
+  times = np.arange(0, num_samples) / spec_fs
+
+  # time labels
+  s_times = np.arange(0, len(times))
+  x_times = ['{:.2f}'.format(ti) for ti in times]
+
+  # rescale timeticks
+  s_times, x_times = rescale_timeticks_iteratively(s_times, x_times)
+
+  # set axis
+  ax.set_xticks(s_times)
+  ax.set_xticklabels(x_times)
+  ax.set_xlabel('Time [s]')
+
+
+# def add_frequency_to_axis(ax, num_samples, **kwargs):
+#   """
+#   add time to axis
+#   """
+
+#   # fs must be in kwargs
+#   if not kwargs.get('feature_type') in ['spec', 'log_spec', 'log_mel_spec']: return
+#   if 'fs' not in kwargs.keys(): return
+
+#   # mel frequencies
+#   has_mel_frequencies = 'mel_frequencies' in kwargs.keys() and kwargs.get('feature_type') in ['log_mel_spec']
+
+#   # fs
+#   fs = kwargs['fs']
+
+#   # frequencies
+#   frequencies = np.arange(0, num_samples) * ((fs//2) / (num_samples - 1)) if not has_mel_frequencies else kwargs['mel_frequencies']
+
+#   # frequencie labels
+#   s_frequencies = np.arange(0, len(frequencies))[::np.max([num_samples//10, 1])]
+#   x_frequencies = ['{:.1f}'.format(ti) for ti in frequencies][::np.max([num_samples//10, 1])]
+
+#   # set axis
+#   ax.set_yticks(s_frequencies)
+#   ax.set_yticklabels(x_frequencies)
+#   ax.set_ylabel('{}Frequency [Hz]'.format('Mel ' if has_mel_frequencies else ''))
+  
+
+def plot_waveform_and_features(waveform, features, plot_path=None, show_plot_flag=False, **kwargs):
+  """
+  plot waveform and features
+  """
+
+  # create figure
+  fig = plt.figure(figsize=(12, 8))
+
+  # adjustments
+  fig.subplots_adjust(hspace=0.5)
+
+  # kwargs
+  imshow_kwargs = {'origin': 'lower', 'aspect': 'auto', 'interpolation': 'none'}
+  [imshow_kwargs.update({k: v}) for k, v in kwargs.items() if k in imshow_kwargs.keys()]
+
+  # title
+  if kwargs.get('title') is not None: fig.suptitle(kwargs.get('title'))
+
+  # waveform
+  ax = fig.add_subplot(2, 1, 1)
+  ax.plot(waveform)
+  ax.set_title('Waveform')
+  ax.set_ylabel('Magnitude')
+  ax.set_xlim([0, len(waveform)])
+  add_time_to_axis(ax, len(waveform), **kwargs)
+  ax.grid()
+
+  # features
+  ax = fig.add_subplot(2, 1, 2)
+  ax.plot(features) if len(features.shape) == 1 else ax.imshow(features, **imshow_kwargs)
+  ax.set_title('Features')
+  ax.set_ylabel('Frequency Coeffs.')
+  if len(features.shape) == 2: 
+    add_frame_time_to_axis(ax, features.shape[1], **kwargs)
+    #add_frequency_to_axis(ax, features.shape[0], **kwargs)
+  else: 
+    add_time_to_axis(ax, features.shape[-1], **kwargs)
+    ax.set_xlim([0, features.shape[-1]])
+    ax.grid()
+
+
+  # save figure
+  if plot_path is not None: fig.savefig(plot_path, dpi=100)
+
+  # show plot or close
+  plt.show() if show_plot_flag else plt.close()
+
+
+def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, show_plot_flag=False, apply_argmax=False):
   """
   plot confusion matrix
   """
@@ -74,4 +215,4 @@ def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, is
   if plot_path is not None: fig.savefig(plot_path, dpi=100)
 
   # show plot or close
-  plt.show() if is_showing_plot else plt.close()
+  plt.show() if show_plot_flag else plt.close()

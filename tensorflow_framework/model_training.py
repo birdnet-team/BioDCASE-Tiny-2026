@@ -135,7 +135,7 @@ def run_model_training(config: Config):
   print("Training finished successfully!\nConfusion matrix saved in [{}].".format(CM_FIG_PATH))
 
   # plot confusion matrix
-  plot_confusion_matrix(y_true, y_pred, labels=list(class_dict.keys()), plot_path=CM_FIG_PATH, is_showing_plot=False, apply_argmax=True)
+  plot_confusion_matrix(y_true, y_pred, labels=list(class_dict.keys()), plot_path=CM_FIG_PATH, show_plot_flag=False, apply_argmax=True)
 
 
 if __name__ == "__main__":

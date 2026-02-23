@@ -30,7 +30,6 @@ datamodule:
   intermediate:
     root_path: './output/01_intermediate'
     intermediate_id: 'intermediate0'
-    redo: False
     filter_files: {'is_used': False, 're_contains': '.*'}
     file_naming: {'target_file_ext': '.npz', 'method': 'keeping_parent_folder'}
     compress: True
@@ -39,7 +38,6 @@ datamodule:
   caching:
     root_path: './output/02_features'
     cache_id: 'cache0'
-    redo: False
     filter_files: {'is_used': False, 're_contains': '.*'}
     file_naming: {'target_file_ext': '.npz', 'method': 'parent_folder_to_filename'}
     compress: True
@@ -59,7 +57,9 @@ datamodule:
 
   # other flags
   add_channel_dimension: True
-  redo: False
+  redo_all: False
+  redo_intermediate: False
+  redo_cache: False
   verbose: False
   to_torch: True
 

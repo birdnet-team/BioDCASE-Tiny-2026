@@ -95,11 +95,11 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
 
   def getitem_to_torch(self, idx):
-    return torch.from_numpy(self.features[idx]), torch.from_numpy(np.squeeze(self.targets[idx])), torch.from_numpy(np.squeeze(self.sample_ids[idx]))
+    return torch.from_numpy(self.features[idx]), torch.asarray(self.targets[idx]), torch.asarray(self.sample_ids[idx])
 
 
   def getitem_numpy(self, idx):
-    return self.features[idx], np.squeeze(self.targets[idx]), np.squeeze(self.sample_ids[idx])
+    return self.features[idx], self.targets[idx], self.sample_ids[idx]
 
 
   def cfg_init(self, **cfg_overwrites):
@@ -128,7 +128,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       'intermediate': {
         'root_path': './output/01_intermediate',
         'intermediate_id': 'intermediate0',
-        'redo': False,
         'filter_files': {'is_used': False, 're_contains': '.*'},
         'file_naming': {'target_file_ext': '.npz', 'method': 'keeping_parent_folder'},
         'compress': True,
@@ -136,7 +135,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       'caching': {
         'root_path': './output/02_features',
         'cache_id': 'cache0',
-        'redo': False,
         'filter_files': {'is_used': False, 're_contains': '.*'},
         'file_naming': {'target_file_ext': '.npz', 'method': 'parent_folder_to_filename'},
         'compress': True,
@@ -156,7 +154,9 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
       # other flags
       'add_channel_dimension': True,
-      'redo': False,
+      'redo_all': False,
+      'redo_intermediate': False,
+      'redo_cache': False,
       'verbose': False,
       'to_torch': True,
       }
@@ -171,7 +171,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
 
     # already processed return empty list
-    if any([f for f in self.intermediate_path.glob('**/*') if f.is_file()]) and not self.cfg['intermediate']['redo'] and not self.cfg['redo']: 
+    if any([f for f in self.intermediate_path.glob('**/*') if f.is_file()]) and not self.cfg['redo_intermediate'] and not self.cfg['redo_all']: 
 
       # intermediate info - needed for further processing
       self.intermediate_info = yaml.safe_load(open(str(self.intermediate_path / 'intermediate_info.yaml')))
@@ -226,7 +226,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
 
     # already cached (simple statement)
-    if any([f for f in self.cached_path.glob('**/*') if f.is_file()]) and not self.cfg['caching']['redo'] and not self.cfg['redo']: return
+    if any([f for f in self.cached_path.glob('**/*') if f.is_file()]) and not self.cfg['redo_cache'] and not self.cfg['redo_all']: return
 
     # info
     print("Datamodule - Caching features to: ", self.cached_path)
@@ -251,7 +251,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     self.at_caching_add_something_before_file_processing()
 
     # go through each file
-    for file in files:
+    for sid, file in enumerate(files):
 
       # target
       y = self.at_caching_extract_target_from_file(file)
@@ -282,7 +282,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       f_save = np.savez_compressed if self.cfg['caching']['compress'] else np.savez
 
       # save file
-      f_save(file=out_file_path, x=x, y=y)
+      f_save(file=out_file_path, x=x, y=y, sid=np.array(sid).astype(np.uint32))
 
     # add something after file processing
     self.at_caching_add_something_after_file_processing()
@@ -339,7 +339,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       # stack data
       self.features[i] = self.at_load_cache_process_features(data['x'])
       self.targets[i] = data['y']
-      self.sample_ids[i] = [idx for idx, name in enumerate(self.cache_info['files']['cached']) if re.search(str(cached_file), name)]
+      self.sample_ids[i] = data['sid']
 
     # length
     assert(len(self.features) == len(self.targets))
@@ -355,21 +355,21 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
     train datraset loading, overwrite
     """
-    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': self.cfg['train_folder']})
+    self.load_cache(additional_file_filter_cfg={'is_used': True, 're_contains': self.cfg['train_folder']})
 
 
   def load_validation_dataset(self):
     """
     train datraset loading, overwrite
     """
-    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': self.cfg['validation_folder']})
+    self.load_cache(additional_file_filter_cfg={'is_used': True, 're_contains': self.cfg['validation_folder']})
 
 
   def load_test_dataset(self):
     """
     train datraset loading, overwrite
     """
-    self.load_cache(additional_file_filter_cfg={'is_used': False, 're_contains': self.cfg['test_folder']})
+    self.load_cache(additional_file_filter_cfg={'is_used': True, 're_contains': self.cfg['test_folder']})
 
 
   def file_naming_by_config(self, cfg_file_naming, input_file, target_path, file_root_dir, file_name_addon='', overwrite_file_ext=None):
@@ -512,7 +512,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
     extract target from file (overwrite this)
     """
-    return np.array([self.label_dict[file.parent.stem]])
+    return np.array(self.label_dict[file.parent.stem]).astype(np.uint8)
 
 
   def at_caching_extract_features_from_file(self, file):
@@ -526,6 +526,9 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # compute features
     features = self.do_windows_fn(x).astype(np.float32)
+
+    # transpose features: [rows x cols] = [frequency bins x time frames]
+    features = features.T
 
     # cache info update
     if self.cache_info['x_len'] is None: self.cache_info['x_len'] = len(x)
@@ -557,8 +560,8 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # allocate memory space
     self.features = np.empty(shape=(num_cached_files,) + target_feature_shape, dtype=np.float32)
-    self.targets = np.empty(shape=(num_cached_files, 1), dtype=np.uint8)
-    self.sample_ids = np.empty(shape=(num_cached_files, 1), dtype=np.uint32)
+    self.targets = np.empty(shape=(num_cached_files), dtype=np.uint8)
+    self.sample_ids = np.empty(shape=(num_cached_files), dtype=np.uint32)
 
 
   def at_load_cache_process_features(self, x):
@@ -585,6 +588,14 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     print("--\n")
 
 
+  def play_sound_by_single_sid(self, sid):
+    """
+    play sound by single sid
+    """
+    import sounddevice
+    sounddevice.play(*self.get_raw_waveform_and_fs_by_single_sid(sid))
+
+
   def get_feature_shape_at_load(self):
     """
     feature shape at load
@@ -592,7 +603,30 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     assert self.load_info.get('feature_shape_at_load') is not None, "Load data before asking about feature shape at load."
     return self.load_info['feature_shape_at_load']
 
+
+  def get_raw_waveform_file_by_single_sid(self, sid):
+    """
+    waveform file of origin
+    """
+    return self.get_file_names_by_single_sid(sid)[0]
+
+
+  def get_raw_waveform_and_fs_by_single_sid(self, sid):
+    """
+    waveform data of origin file
+    """
+    return soundfile.read(self.get_raw_waveform_file_by_single_sid(sid))
+
+
+  def get_cache_info_spec_fs(self):
+    """
+    get spec sampling rate (fs)
+    """
+    return self.cfg['target_sample_rate'] / self.cfg['feature_extraction']['window_stride']
+
+
   def get_label_dict(self): return self.label_dict
+  def get_target_to_label_dict(self): return {v: k for k, v in self.label_dict.items()}
   def get_cache_info(self): return self.cache_info
   def get_cache_info_from_cached_folder(self): return yaml.safe_load(open(str(self.cached_path / 'cache_info.yaml')))
   def get_targets(self): return np.squeeze(self.targets)
@@ -600,26 +634,53 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
   def get_file_name_id_by_single_sid(self, sid): return Path(self.get_file_names_by_single_sid(sid)[-1]).stem
 
 
+
 if __name__ == '__main__':
   """
   datamodule tiny ml
   """
 
+  from plots import plot_waveform_and_features
+
   # yaml config file
   cfg = yaml.safe_load(open("./config.yaml"))
 
   # datamodule
-  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo=False, load_set_on_init='train')
+  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo_all=False, redo_cache=False, load_set_on_init='train')
   datamodule.info()
 
   # loader
-  dataloader = torch.utils.data.DataLoader(datamodule, **cfg['dataloader_kwargs'])
+  dataloader = torch.utils.data.DataLoader(datamodule, **{'batch_size': 4, 'shuffle': True})
 
-  # test loader
-  x, y, sid = next(iter(dataloader))
+  # get label dict
+  target_to_label_dict = datamodule.get_target_to_label_dict()
 
-  print("features: ", x)
-  print("feature shape: ", x.shape)
-  print("feature type: ", x.dtype)
-  print("targets: ", y)
-  print("sample ids: ", sid)
+  # show some examples
+  for data_batch in dataloader:
+
+    # batch 
+    for data in zip(*data_batch):
+
+      # extract components
+      x, y, sid = data
+
+      # extract waveform and features
+      waveform, fs = datamodule.get_raw_waveform_and_fs_by_single_sid(sid)
+      features = x[0]
+      file_name = datamodule.get_file_name_id_by_single_sid(sid)
+
+      # play sound
+      datamodule.play_sound_by_single_sid(sid)
+
+      # some prints
+      print("file_name: ", file_name)
+      print("feature shape: ", x.shape)
+      print("feature type: ", x.dtype)
+      print("sample ids: ", sid)
+      print("targets: ", y)
+      print("label: ", target_to_label_dict[int(y)])
+
+      # plot waveform and features
+      plot_waveform_and_features(waveform, features, show_plot_flag=True, title=file_name, fs=fs, spec_fs=datamodule.get_cache_info_spec_fs())
+
+    break
