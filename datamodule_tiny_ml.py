@@ -121,6 +121,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
         'mel_high_hz': 7500,
         'mel_post_scaling_bits': 6,
         },
+      'normalize_features': True,
       'dataset': {
         'root_path': '/path/to/the/downloaded/dataset',
         'file_ext': '.wav',
@@ -529,6 +530,9 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # transpose features: [rows x cols] = [frequency bins x time frames]
     features = features.T
+
+    # normalize features
+    if self.cfg['normalize_features']: features = (features - np.min(features)) / np.ptp(features)
 
     # cache info update
     if self.cache_info['x_len'] is None: self.cache_info['x_len'] = len(x)

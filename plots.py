@@ -130,7 +130,7 @@ def plot_waveform_and_features(waveform, features, plot_path=None, show_plot_fla
 
   # features
   ax = fig.add_subplot(2, 1, 2)
-  ax.plot(features) if len(features.shape) == 1 else ax.imshow(features, **imshow_kwargs)
+  im = ax.plot(features) if len(features.shape) == 1 else ax.imshow(features, **imshow_kwargs)
   ax.set_title('Features')
   ax.set_ylabel('Frequency Coeffs.')
   if len(features.shape) == 2: 
@@ -141,6 +141,8 @@ def plot_waveform_and_features(waveform, features, plot_path=None, show_plot_fla
     ax.set_xlim([0, features.shape[-1]])
     ax.grid()
 
+  # add colorbar
+  add_colorbar(im, fig, cax=None, size='2%', pad='2%')
 
   # save figure
   if plot_path is not None: fig.savefig(plot_path, dpi=100)
@@ -204,15 +206,24 @@ def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, sh
   # spacings
   fig.subplots_adjust(bottom=0.25)
 
-  # divider for cax
-  cax = make_axes_locatable(plt.gca()).append_axes('right', size='3%', pad='3%')
-
-  # colorbar
-  color_bar = fig.colorbar(im, cax=cax)
-  color_bar.ax.tick_params(labelsize=10)
+  # add colorbar
+  add_colorbar(im, fig, cax=None, size='3%', pad='3%')
 
   # save figure
   if plot_path is not None: fig.savefig(plot_path, dpi=100)
 
   # show plot or close
   plt.show() if show_plot_flag else plt.close()
+
+
+def add_colorbar(im, fig, cax=None, size='2%', pad='2%', **kwargs):
+  """
+  adds colorbar to 2d plot
+  """
+
+  # devider for cax
+  if cax is None: cax = make_axes_locatable(plt.gca()).append_axes('right', size=size, pad=pad)
+
+  # colorbar
+  color_bar = fig.colorbar(im, cax=cax)
+  color_bar.ax.tick_params(labelsize=10)

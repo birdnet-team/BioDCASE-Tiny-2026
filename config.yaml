@@ -21,6 +21,9 @@ datamodule:
     mel_high_hz: 7500
     mel_post_scaling_bits: 6
 
+  # normalize
+  normalize_features: True
+
   # dataset
   dataset:
     root_path: '/path/to/the/downloaded/dataset'

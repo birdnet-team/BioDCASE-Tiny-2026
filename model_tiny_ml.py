@@ -22,14 +22,14 @@ class ModelTinyMl(ModelBase):
 
     # conv layer 1
     self.layer1 = torch.nn.Sequential(
-      torch.nn.Conv2d(in_channels=self.cfg['input_shape'][0], out_channels=16, kernel_size=(16, 16), stride=(1, 1)),
+      torch.nn.Conv2d(in_channels=self.cfg['input_shape'][0], out_channels=16, kernel_size=(8, 8), stride=(1, 1)),
       torch.nn.ReLU(),
       )
     
     # conv layer 2
     self.layer2 = torch.nn.Sequential(
-      torch.nn.Conv2d(in_channels=16, out_channels=1, kernel_size=(8, 8), stride=(1, 1)),
-      torch.nn.Dropout2d(p=0.25),
+      torch.nn.Conv2d(in_channels=16, out_channels=1, kernel_size=(4, 4), stride=(1, 1)),
+      torch.nn.Dropout2d(p=0.5),
       torch.nn.MaxPool2d(kernel_size=(5, 5), stride=(5, 5)),
       torch.nn.ReLU(),
       )
@@ -95,7 +95,7 @@ if __name__ == '__main__':
   model.set_model_to_training_mode()
 
   # train loop
-  for epoch in range(5):
+  for epoch in range(50):
 
     # train model
     loss = model.train_step(data)

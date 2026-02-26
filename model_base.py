@@ -183,13 +183,16 @@ class ModelBase(torch.nn.Module):
     return y_pred
 
 
-  def save(self):
+  def save(self, save_also_as_tflite=False):
     """
     save model
     """
 
     # save as torch model
     torch.save(self.state_dict(), self.model_file_path)
+
+    # skip
+    if not save_also_as_tflite: return
 
     # save as tflite model
     self.save_model_to_tflite()
@@ -199,6 +202,11 @@ class ModelBase(torch.nn.Module):
     """
     model to tflite
     """
+
+    # skip if litert not installed (just to not crash the code, in case if not)
+    if not bool(importlib.util.find_spec('litert_torch')): 
+      print("\n***@model_base.save_model_to_tflite: litert_torch is not installed, therefore, model could not be saved in .tflite format!")
+      return
 
     # info
     print("\nSave tflite model!")

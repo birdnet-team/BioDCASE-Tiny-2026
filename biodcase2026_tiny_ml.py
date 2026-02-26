@@ -56,7 +56,7 @@ def run_model_training(cfg, model, dataloader_train, dataloader_validation):
   print("Training of model finished!")
 
   # save model in case of no early stopping
-  model.save()
+  model.save(save_also_as_tflite=True)
 
 
 def run_model_testing(cfg, model, dataloader_test, label_dict):
@@ -93,8 +93,8 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   plot_confusion_matrix(y_targets, y_predictions, labels=list(label_dict.keys()), plot_path=plot_path_cm)
 
   # test info
-  print("test accuracy: {:.4f}".format(acc))
-  print("confusion matrix is saved in [{}]".format(plot_path_cm))
+  print("Test accuracy: {:.4f}".format(acc))
+  print("Confusion matrix is saved in [{}]".format(plot_path_cm))
 
   # info
   print("Testing of model finished!")
