@@ -102,8 +102,18 @@ reports:
   report_path: './output/04_reports'
 
 
-# embedded code
-embedded_code_generation:
+# generate embedded code
+generate_embedded_code:
+
+  # template directory
+  template_dir: "./biodcase_tiny/embedded/firmware"
+
+  # gen code dir
+  gen_code_dir: "./output/05_generated_embedded_code"
+  gen_code_source_folder_name: "src"
 
   # replace with your serial device
   serial_device: "/dev/ttyUSB0"
+
+  # quantize
+  quantize: False

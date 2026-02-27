@@ -7,7 +7,7 @@ OUT_DIR = Path(__file__).parent / 'output'
 RAW_OUT_DIR = OUT_DIR / "00_raw"
 
 # change this to your dataset path
-CLIPS_DIR = Path("/to/your/dataset")
+CLIPS_DIR = Path("/world/dekutree/datasets/biodcase2026_tiny_ml/raw/")
 #CLIPS_DIR = RAW_OUT_DIR / "clips"
 
 PREPROC_DIR = OUT_DIR / "01_intermediate"
@@ -32,3 +32,6 @@ GEN_CODE_DIR = OUT_DIR / '05_generated_code'
 
 EVAL_ZIP_PATH = RAW_OUT_DIR / "Evaluation Set.zip"
 EVAL_CLIPS_DIR = RAW_OUT_DIR / "eval_clips"
+
+# template dir
+TEMPLATE_DIR = Path(__file__).parent.parent / "biodcase_tiny/embedded/firmware"

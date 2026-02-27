@@ -314,6 +314,7 @@ class ModelBase(torch.nn.Module):
   def get_input_shape(self): return self.cfg['input_shape']
   def get_save_path(self): return self.cfg['save_path']
   def get_model_file_path(self): return self.model_file_path
+  def get_tflite_model_file_path(self): return self.model_file_path.with_suffix('.tflite')
   def get_model_name(self): return self.cfg['model_name']
 
 

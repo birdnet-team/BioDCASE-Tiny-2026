@@ -18,16 +18,14 @@ def run_deploy_generated_code(config: Config, gen_code_dir: Path = GEN_CODE_DIR)
   deploy generated code
   """
 
-  # assertions
-  assert gen_code_dir.is_dir(), "Generated code does not exist in {}, run code generation first!".format(gen_code_dir)
-
   # source path
   src_path = gen_code_dir / "src"
-  src_path.mkdir(exist_ok=True)
+
+  # assertions
+  assert src_path.is_dir(), "Generated code does not exist in {}, run code generation first!".format(gen_code_dir)
 
   # toolchain: compile, flash, and monitor
   toolchain = ESPToolchain(config.embedded_code_generation.serial_device)
-  #toolchain.compile(src_path=src_path)
   toolchain.flash(src_path=src_path)
   toolchain.monitor(src_path=src_path)
 

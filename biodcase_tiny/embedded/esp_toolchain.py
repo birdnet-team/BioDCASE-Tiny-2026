@@ -97,6 +97,9 @@ class ESPToolchain:
     compile for esp
     """
 
+    # resolve path
+    src_path = src_path.resolve()
+
     # create container
     container = self._create_container(
       "idf.py build",
@@ -120,6 +123,9 @@ class ESPToolchain:
     flash esp
     """
 
+    # resolve path
+    src_path = src_path.resolve()
+
     # create container 
     container = self._create_container(
       command=f"idf.py -p {self.port} flash",
@@ -139,6 +145,9 @@ class ESPToolchain:
     monitor code on esp
     """
 
+    # resolve path
+    src_path = src_path.resolve()
+    
     # create container
     container = self._create_container(
       command=f"idf.py -p {self.port} monitor",

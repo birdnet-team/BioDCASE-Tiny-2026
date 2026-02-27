@@ -9,6 +9,10 @@ from model_tiny_ml import ModelTinyMl
 from plots import plot_confusion_matrix
 from pathlib import Path
 
+from biodcase_tiny.embedded.esp_target import ESPTarget
+from biodcase_tiny.embedded.esp_toolchain import ESPToolchain
+from biodcase_tiny.feature_extraction.feature_extraction import make_constants
+
 
 def run_model_training(cfg, model, dataloader_train, dataloader_validation):
   """
@@ -16,7 +20,7 @@ def run_model_training(cfg, model, dataloader_train, dataloader_validation):
   """
 
   # info
-  print("\nTrain model...")
+  print("\nTrain model...\n")
 
   # epochs
   for epoch in range(cfg['model_training']['num_epochs']):
@@ -65,7 +69,7 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   """
 
   # info
-  print("\nTest model...")
+  print("\nTest model...\n")
 
   # predictions and targets
   y_predictions = []
@@ -100,6 +104,71 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   print("Testing of model finished!")
 
 
+def run_create_target_embedded_src_code(cfg, model_path):
+  """
+  embedded src code creation
+  """
+
+  # path variables
+  template_dir = Path(cfg['generate_embedded_code']['template_dir'])
+  gen_code_dir = Path(cfg['generate_embedded_code']['gen_code_dir'])
+
+  # create directory
+  if not gen_code_dir.is_dir(): gen_code_dir.mkdir(parents=True)
+
+  # configs
+  fe_c = cfg['datamodule']['feature_extraction']
+  feature_config = make_constants(sample_rate=cfg['datamodule']['target_sample_rate'], win_samples=fe_c['window_len'], window_scaling_bits=fe_c['window_scaling_bits'], mel_n_channels=fe_c['mel_n_channels'], mel_low_hz=fe_c['mel_low_hz'], mel_high_hz=fe_c['mel_high_hz'], mel_post_scaling_bits=fe_c['mel_post_scaling_bits'])
+
+  # info
+  print("\nTarget creation...\n")
+
+  # target creation, validation, and saving of tflite model
+  target = ESPTarget(template_dir, model_path, feature_config, reference_dataset_path=None, quantize=cfg['generate_embedded_code']['quantize'])
+  target.validate()
+
+  # source path
+  src_path = gen_code_dir / cfg['generate_embedded_code']['gen_code_source_folder_name']
+  src_path.mkdir(exist_ok=True)
+
+  # write templates
+  target.process_target_templates(src_path)
+
+
+def run_compile_embedded_src_code(cfg):
+
+  # info
+  print("\nCode Compilation...\n")
+
+  # source path
+  src_path = Path(cfg['generate_embedded_code']['gen_code_dir']) / cfg['generate_embedded_code']['gen_code_source_folder_name']
+
+  # assertions
+  assert src_path.is_dir(), "Generated code does not exist in {}, run code creation first!".format(gen_code_dir)
+
+  # toolchain: compile, flash, and monitor
+  toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])
+  #toolchain.set_target(src_path=src_path)
+  toolchain.compile(src_path=src_path)
+
+
+def run_deploy_embedded_compiled_code(cfg):
+
+  # info
+  print("\nDeploy code to microcontroller and monitor...")
+
+  # source path
+  src_path = Path(cfg['generate_embedded_code']['gen_code_dir']) / cfg['generate_embedded_code']['gen_code_source_folder_name']
+
+  # assertions
+  assert src_path.is_dir(), "Generated code does not exist in {}, run code creation first!".format(gen_code_dir)
+
+  # toolchain: flash, and monitor
+  toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])
+  toolchain.flash(src_path=src_path)
+  toolchain.monitor(src_path=src_path)
+
+
 if __name__ == '__main__':
   """
   tiny ml starts here
@@ -132,3 +201,12 @@ if __name__ == '__main__':
 
   # run model testing
   run_model_testing(cfg, model, dataloader_test, label_dict=datamodule_test.get_label_dict())
+
+  # run generate embedded src code
+  run_create_target_embedded_src_code(cfg, model.get_tflite_model_file_path())
+
+  # compile
+  run_compile_embedded_src_code(cfg)
+
+  # deploy
+  run_deploy_embedded_compiled_code(cfg)

@@ -21,21 +21,12 @@ to generate the final code.
 """
 
 import os
-import re
 import shutil
 import jinja2
-from copy import copy, deepcopy
+
+from copy import deepcopy
 from pathlib import Path
-
-import numpy as np
-import tensorflow as tf
-from keras import Model
-from tensorflow.data import Dataset
-from tensorflow.lite.tools import visualize as tflite_vis
 from biodcase_tiny.feature_extraction.feature_extraction import FeatureConstants, convert_constants
-
-TEMPLATE_EXTENSION = "jinja"
-TEMPLATE_DIR = Path(__file__).parent / "firmware"
 
 
 class ESPTarget():
@@ -43,28 +34,50 @@ class ESPTarget():
   esp target - src code preparation for esp32-s3 with templates - jinja
   """
 
-  def __init__(self, model: Model | bytes, feature_config: FeatureConstants, reference_dataset: Dataset | None = None, quantize: bool = False):
+  #def __init__(self, model: Model | bytes, feature_config: FeatureConstants, reference_dataset: Dataset | None = None, quantize: bool = False):
+  def __init__(self, template_dir: Path, model_path: Path, feature_config: FeatureConstants, reference_dataset_path: Path | None = None, quantize: bool = False):
 
-    # from Keras
-    if isinstance(model, Model):   
-      if reference_dataset is None:
-        raise ValueError("Reference dataset must be provided when a keras model is passed.")
-      self._model_buf = self._create_model_buf(model, reference_dataset, quantize)
+    # arguments
+    self.template_dir = template_dir
+    self.model_path = model_path
+    self.feature_config = feature_config
+    self.reference_dataset_path = reference_dataset_path
+    self.quantize = quantize
 
-    # from tflite serialized model
-    elif isinstance(model, bytes): 
-      if quantize:
-        raise ValueError("A tflite model was provided but `quantize` set to True.")
-      if reference_dataset is not None:
-        raise ValueError("A tflite model was provided, but `reference_dataset` was provided too.")
-      self._model_buf = deepcopy(model)
+    # assertions
+    assert self.template_dir.is_dir(), "Check template directory agian: {}".format(self.template_dir)
 
-    # model configs
+    # members
+    self._model_buf = self.create_model_buffer()
     self._model_ops = self.get_model_ops_and_acts(self._model_buf)
     self._feature_config_buf = convert_constants(feature_config)
 
     # other members
     self.env = None
+
+
+  def create_model_buffer(self):
+    """
+    create model buffer
+    """
+
+    # is it a keras model?
+    if self.model_path.suffix == ".keras": return self._create_model_buf_from_keras_model()
+
+    # is it a tflite model?
+    if self.model_path.suffix == ".tflite":
+
+      # simply read the data as bytes
+      with self.model_path.open("rb") as f: model = f.read()
+
+      # quantize flag check
+      if self.quantize: raise ValueError("A tflite model was provided but `quantize` set to True.")
+
+      # model buffer
+      return deepcopy(model)
+
+    # all other suffixes are not supported
+    raise ValueError("Either a keras or tflite model is required, yours: {}".format(self.model_path))
 
 
   def validate(self):
@@ -80,7 +93,7 @@ class ESPTarget():
       )
 
 
-  def process_target_templates(self, outdir: Path) -> None:
+  def process_target_templates(self, outdir: Path, template_extension="jinja") -> None:
     """
     process target templates
     """
@@ -89,7 +102,7 @@ class ESPTarget():
     self.validate()
 
     # get available projects and their root template folders
-    self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_DIR))
+    self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(self.template_dir))
 
     # extract context to be passed to jinja render
     context = self.extract_context_for_jinja_renderer()
@@ -101,7 +114,7 @@ class ESPTarget():
     # Process each file in the template directory
     for template_name in self.env.list_templates():
       template_path = Path(template_name)
-      if template_path.suffix.lstrip(".") == TEMPLATE_EXTENSION:
+      if template_path.suffix.lstrip(".") == template_extension:
         # Render and save the template file
         template = self.env.get_template(template_name)
         output_path = outdir / template_path.with_suffix("")
@@ -109,22 +122,34 @@ class ESPTarget():
           f.write(template.render(context))
       else:
         # Copy non-template files directly
-        src_path = TEMPLATE_DIR / template_name
+        src_path = self.template_dir / template_name
         dst_path = outdir / template_name
         os.makedirs(dst_path.parent, exist_ok=True)
         shutil.copyfile(src_path, dst_path)
 
 
-  @staticmethod
-  def _create_model_buf(model: Model, reference_dataset: Dataset, quantize=True):
+  def _create_model_buf_from_keras_model(self):
     """
     create model buffer
     """
 
+    # keras and tensorflow package required
+    import keras
+    import tensorflow as tf
+
+    # load keras model
+    model = keras.models.load_model(self.model_path)
+
+    # reference dataset available?
+    if self.reference_dataset_path is None: raise ValueError("Reference dataset must be provided when a keras model is passed.")
+
+    # load reference dataset
+    reference_dataset = tf.data.Dataset.load(str(self.reference_dataset_path))
+
     # converter
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    converter.optimizations = [tf.lite.Optimize.DEFAULT] if quantize else []
-    if quantize:
+    converter.optimizations = [tf.lite.Optimize.DEFAULT] if self.quantize else []
+    if self.quantize:
       converter.inference_input_type = tf.dtypes.int8
       converter.inference_output_type = tf.dtypes.int8
       converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
@@ -165,6 +190,9 @@ class ESPTarget():
     This fn is adapted from tensorflow lite micro tools scripts:
     (https://github.com/tensorflow/tflite-micro/tree/main/tensorflow/lite/micro/tools/gen_micro_mutable_op_resolver/generate_micro_mutable_op_resolver_from_model.py)
     """
+
+    from tensorflow.lite.tools import visualize as tflite_vis
+
     custom_op_found = False
     operators_and_activations = set()
     data = tflite_vis.CreateDictFromFlatbuffer(model_buf)
@@ -201,6 +229,7 @@ class ESPTarget():
 #     This fn is adapted from tensorflow lite micro tools scripts:
 #     (https://github.com/tensorflow/tflite-micro/tree/main/tensorflow/lite/micro/tools/gen_micro_mutable_op_resolver/generate_micro_mutable_op_resolver_from_model.py)
 #     """
+#     import re
 #     # Edge case for AddDetectionPostprocess().
 #     # The custom code is TFLite_Detection_PostProcess.
 #     op_str = op_str.replace("TFLite", "")

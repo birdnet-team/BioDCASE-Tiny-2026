@@ -19,7 +19,7 @@ from keras import Model
 
 from pathlib import Path
 from config import Config, load_config
-from paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, GEN_CODE_DIR, TFLITE_MODEL_PATH
+from paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, GEN_CODE_DIR, TFLITE_MODEL_PATH, TEMPLATE_DIR
 
 # required package paths
 [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
@@ -37,17 +37,6 @@ def run_embedded_code_generation(config: Config, model_path: Path, reference_dat
   # create directory
   if not gen_code_dir.is_dir(): gen_code_dir.mkdir()
 
-  # check model file ending
-  if model_path.suffix == ".keras":
-    model = keras.models.load_model(model_path)
-    reference_dataset = tf.data.Dataset.load(str(reference_dataset_path))
-  elif model_path.suffix == ".tflite":
-    with model_path.open("rb") as f:
-      model = f.read()
-    reference_dataset = None
-  else:
-    raise ValueError("Only Keras and tflite format supported")
-
   # configs
   dp_c = config.data_preprocessing
   fe_c = config.feature_extraction
@@ -57,7 +46,7 @@ def run_embedded_code_generation(config: Config, model_path: Path, reference_dat
   print("\nTarget creation:")
 
   # target creation, validation, and saving of tflite model
-  target = ESPTarget(model, feature_config, reference_dataset, quantize=quantize)
+  target = ESPTarget(TEMPLATE_DIR, model_path, feature_config, reference_dataset_path, quantize=quantize)
   target.validate()
   target.save_tflite_model(tflite_model_path)
 
