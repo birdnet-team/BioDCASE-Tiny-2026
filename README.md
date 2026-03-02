@@ -33,9 +33,6 @@ BioDCASE-Tiny is a competition for developing efficient machine learning models 
 - [Usage](#usage)
 - [Dataset](#dataset)
 - [Development](#development)
-  - [Data Processing Pipeline](#data-processing-pipeline)
-  - [Model Training](#model-training)
-  - [ESP32-S3 Deployment](#esp32-s3-deployment)
 - [ESP32-S3-Korvo-2 Development Board](#esp32-s3-korvo-2-development-board)
 - [Code Structure](#code-structure)
 - [Development Tips](#development-tips)
@@ -49,9 +46,8 @@ BioDCASE-Tiny is a competition for developing efficient machine learning models 
 
 ### Prerequisites
 
-1. Python 3.11+ with pip and venv
-2. [Docker](https://www.docker.com/get-started) for ESP-IDF environment
-3. USB cable and ESP32-S3-Korvo-2 development board
+1. Python >=3.11 and <=3.13 with pip and venv
+2. ESP32-S3-Korvo-2 development board and USB cable
 
 ### Installation Steps
 
@@ -61,26 +57,28 @@ git clone https://github.com/birdnet-team/BioDCASE-Tiny-2026.git
 cd BioDCASE-Tiny-2026
 ```
 
-2. Create a virtual environment (recommended)
+2. Install your favourite python version, we used 3.13 for testing
+
+3. Create a virtual environment (recommended)
 
 ```bash
-python3 -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate
 ```
 
 3. Install Python dependencies:
 ```bash
-pip install -e .
+pip install -r requirements.txt
 ```
 
-4. Set your serial device port in the pipeline_config.yaml
+4. Set your serial device port in the config.yaml
 
 ```yaml
-embedded_code_generation:
+generate_embedded_code:
   serial_device: <YOUR_DEVICE> 
 ```
 
-### Running on Windows
+### Installation and running on Windows
 
 As the required tflite-micro package is not easily available for Windows we recommend using WSL to run this project.
 
@@ -98,16 +96,6 @@ You might also need to grant some rights to run the deployment:
 sudo adduser $USER dialout
 sudo chmod a+rw $SERIAL_PORT
 ```
-
-## Usage
-
-- Modify model.py with your architecture (make sure to compile with optimizer and loss)
-- Modify the training loop in the same file, if you need to
-- Modify pipeline_config.yaml parameters of feature extraction
-- run biodcase.py
-
-Important: Writing custom features rather than using what is implemented here, requires implementing a numerically equivalent version on the embedded target too, as that is a necessary condition for the evaluated model to behave identically on the host and on the embedded target.
-This is a non-trivial undertaking, so we generally advice to stick to what is already implemented in this repository.
 
 ## Dataset
 
@@ -134,71 +122,74 @@ Development_Set/
 │   ├── species_2/
 ```
 
-
-### Download
+### Download and Setup
 
 Download the dataset from: [BioDCASE-Tiny 2026 Dataset]()
 
-After downloading paste the folders into /data/01_raw/clips
+Save the dataset at any location you want, for instance, /output/00_raw/ and edit the config.yaml file at following location
+```yaml
+datamodule:
+  dataset:
+    root_path: ./output/00_raw/
+```
+also you can change the intermediate and cache (feature) paths at:
+```yaml
+datamodule:
+  intermediate:
+    root_path: ./output/01_intermediate/
+  caching:
+    root_path: ./output/02_features/
+```
 
 ## Development
+
+- Modify `config.yaml`
+- Modify `model_tiny_ml.py` or create your own model that is based on the model_base class implemented
+
+> [!IMPORTANT]
+> Writing custom features rather than using what is implemented here, requires implementing a numerically equivalent version on the embedded target too!
+> This is a necessary condition for the evaluated model to behave identically on the host and on the embedded target likewise.
+> Note, that this is a non-trivial undertaking and we generally advice to stick to what is already implemented in this repository!
 
 ### Quickstart
 
 To run the complete pipeline execute:
-   ```bash
-   python biodcase.py
-   ```
+```bash
+python biodcase2026_tiny_ml.py
+```
 
-This will execute the data preprocessing, extract the features, train the model and deploy it to your board.
+This will execute the data preprocessing, extract the features, train the model, and deploy it to your board.
 
-Once deployed, benchmarking code on the ESP32-S3 will display info, via serial monitor, about the runtime performance of the preprocessing steps and actual model.
+Once deployed, benchmarking code on the ESP32-S3 will display info about the runtime performance of the preprocessing steps and actual model via serial monitor (over USB cable).
 
-#### Step-by-Step Deployment Instructions
+Data Preprocessing and feature extraction can also be run separately to visualize some data examples:
+```bash
+python datamodule_tiny_ml.py
+```
 
-The steps of the pipeline can be executed individually
-
-1. Data Preprocessing
-   ```bash
-   python data_preprocessing.py
-   ```
-
-2. Feature Extraction
-   ```bash
-   python feature_extraction.py
-   ```
-
-3. Model Training
-   ```bash
-   python model_training.py
-   ```
-
-4. Deployment
-   ```bash
-   python embedded_code_generation.py
-   ```
-
-
-### Data Processing Pipeline
+### Data Processing and Feature Extraction
 
 The data processing pipeline follows these steps:
-1. Raw audio files are read and preprocessed
-2. Features are extracted according to configuration in `pipeline_config.yaml`
-3. The dataset is split into training/validation/testing sets
-4. Features are used for model training
+1. Raw audio files are read, preprocessed, and checked
+2. Features are extracted according to configuration in `config.yaml`
+```yaml
+datamodule:
+  feature_extraction:
+    window_len: 4096
+    window_stride: 512
+    ...
+```
 
 ### Model Training
 
-The model training process is managed in `model_training.py`. You can customize:
-- Model architecture in `model.py` and, optionally, the training loop
-- Training hyperparameters in `pipeline_config.yaml`
-- Feature extraction parameters to optimize model input
+The model training process is managed in the `model_base.py` class.
+You can customize the model architecture in `model.py` and, optionally, the training loop
 
 ### ESP32-S3 Deployment
 
 To deploy your model to the ESP32-S3-Korvo-2 board, you'll use the built-in deployment tools that handle model conversion, code generation, and flashing. The deployment process:
 
-1. Converts your trained Keras model to TensorFlow Lite format optimized for the ESP32-S3
+1. Converts your trained pytorch model to TensorFlow Lite format optimized for the ESP32-S3
 2. Packages your feature extraction configuration for embedded use
 3. Generates C++ code that integrates with the ESP-IDF framework
 4. Compiles the firmware using Docker-based ESP-IDF toolchain
@@ -227,12 +218,13 @@ and can be bought for instance [here](https://www.digikey.de/de/products/detail/
 
 ### Key Entry Points
 
-- `biodcase.py` - Main execution pipeline
-- `model.py` - Define your model architecture
-- `feature_extraction.py` - Audio feature extraction implementations
-- `embedded_code_generation.py` - ESP32 code generation utilities
+- `biodcase2026_tiny_ml.py` - Main execution pipeline
+- `datamodule_tiny_ml.py` - Datamodule for preprocessing, feature extraction, and data loading
+- `model_base.py` - Define your model architecture
+- `model_tiny_ml.py` - Define your model architecture
 - `biodcase_tiny/embedded/esp_target.py` - ESP target definition and configuration
-- `biodcase_tiny/embedded/firmware/main` - Firmware source code
+- `biodcase_tiny/embedded/esp_toolchain.py` - ESP toolchain and for docker IDF
+- `biodcase_tiny/embedded/firmware/main` - Firmware source code that will be copied and modified for the ESP target
 
 ### Benchmarking
 
@@ -243,7 +235,7 @@ The codebase includes performance benchmarking tools that measure:
 
 ## Development Tips
 
-1. **Feature Extraction Parameters**: Carefully tune the feature extraction parameters in `pipeline_config.yaml` for your specific audio dataset.
+1. **Feature Extraction Parameters**: Carefully tune the feature extraction parameters in `config.yaml`.
 
 2. **Model Size**: Keep your model compact. The ESP32-S3 has limited memory, so optimize your architecture accordingly.
 
