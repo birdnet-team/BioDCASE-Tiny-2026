@@ -2,9 +2,23 @@
 # todos for biodcase 2026 task3 - tiny ml
 
 - check if samples in test and validation are okay
-- preprocessing: resample
-- run old system on new data 10 bird classes + 1 background class
 - should we make the background class as output class or work with 10 classes and thresholds?
-- pytorch integration
-- test submission - python code or github actions?
-- emulator: quemu?
+- testing of the baseline
+- new model design for both torch and tensorflow
+- baseline scores!
+- update documentation (I think if we do not use the microphones of korvo-v2, then the participants can also just simply buy a esp-s3 dev-kit which is much cheaper)
+- an evaluation pipeline of the submissions - test submission - python code or github actions?
+- improvement of the embedding side (e.g. real microphone input and classification)
+- features: until now only log mel spec features are the ones that can be used without coding the embedded (just some config settings). 
+- anything else you can think of
+
+
+
+# --
+# done
+
+- pytorch integration -> done
+- preprocessing: resample -> not necessary, files are checked
+- run old system on new data 10 bird classes + 1 background class -> done
+- emulator: quemu? -> does not work
+- pytorch model to .tflite limitations? -> when time lets check

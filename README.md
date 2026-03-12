@@ -13,16 +13,18 @@
   <br><br>
 </div>
 
-<!-- <div align="center">
-  <picture>
-    <img src="docs/under_construction.png" alt="Under construction" width="300">
-  </picture>
-  <br><br>
-</div> -->
-
-This repository contains the development framework for the **BioDCASE-Tiny 2026 competition (Task 3)**, focusing on TinyML implementation for bird species recognition on the ESP32-S3-Korvo-2 development board.
+This repository contains the development framework for the **BioDCASE-Tiny 2026 competition (Task 3)**, focusing on TinyML implementations for bird species recognition on the ESP32-S3-Korvo-2 development board.
 
 For complete competition details, visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3).
+
+## Todos:
+- **@Christian:** create a submission test system (inference model + trained weights + .tflite version of the model) until 26.03.2026
+- **@Tom:** read the terminal output from the profiler (esp idf monitoring) and fetch the relevant information for result comparison until 26.03.2026
+- **@Yasmine:** create an equivalent of the baseline model from tensorflow (`./tensorflow_framework/model.py`) to pytorch model until 26.03.2026
+- **@Yasmine:** create a quantized version of the baseline model, check its performance to the original one and use it as new baseline until 26.03.2026
+- **@All:** run the baseline model and compute scores (same scores as last year's challenge)
+- **@All:** update the documentation
+- **@All:** next meetup 26.03.2026, 16:00
 
 ## Background
 
@@ -220,8 +222,8 @@ and can be bought for instance [here](https://www.digikey.de/de/products/detail/
 
 - `biodcase2026_tiny_ml.py` - Main execution pipeline
 - `datamodule_tiny_ml.py` - Datamodule for preprocessing, feature extraction, and data loading
-- `model_base.py` - Define your model architecture
-- `model_tiny_ml.py` - Define your model architecture
+- `model_base.py` - Base model class: inherit this class for your own model and define its architecture, training, and more.
+- `model_tiny_ml.py` - Define your model
 - `biodcase_tiny/embedded/esp_target.py` - ESP target definition and configuration
 - `biodcase_tiny/embedded/esp_toolchain.py` - ESP toolchain and for docker IDF
 - `biodcase_tiny/embedded/firmware/main` - Firmware source code that will be copied and modified for the ESP target
