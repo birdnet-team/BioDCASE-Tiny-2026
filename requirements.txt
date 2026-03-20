@@ -1,9 +1,10 @@
 # --
 # requirements
 
-# choose a python version <= 3.13, because tensorflow is not yet supported in pip in later python versions.
+# choose a python version <= 3.13, because tensorflow (problem with litert-torch) is not yet supported in pip in later python versions.
 
 # packages required:
+docker
 flatbuffers
 jinja2
 librosa
@@ -15,3 +16,4 @@ pyyaml
 soundfile
 torch
 torchinfo
+tqdm
