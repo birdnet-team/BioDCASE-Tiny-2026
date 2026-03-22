@@ -1,6 +1,7 @@
 # --
 # biodcase 2026 - tiny ml (task 3)
 
+import sys
 import torch
 import numpy as np
 
@@ -109,6 +110,12 @@ def run_create_target_embedded_src_code(cfg, model_path):
   embedded src code creation
   """
 
+  # check model path
+  if not model_path.is_file(): 
+    print("\n***Could not create target!!! Your model file does not exist: {}".format(model_path))
+    sys.exit()
+    return
+
   # path variables
   template_dir = Path(cfg['generate_embedded_code']['template_dir'])
   gen_code_dir = Path(cfg['generate_embedded_code']['gen_code_dir'])
@@ -144,7 +151,7 @@ def run_compile_embedded_src_code(cfg):
   src_path = Path(cfg['generate_embedded_code']['gen_code_dir']) / cfg['generate_embedded_code']['gen_code_source_folder_name']
 
   # assertions
-  assert src_path.is_dir(), "Generated code does not exist in {}, run code creation first!".format(gen_code_dir)
+  assert src_path.is_dir(), "Generated code does not exist in {}, run code creation first!".format(src_path)
 
   # toolchain: compile, flash, and monitor
   toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])
@@ -161,7 +168,7 @@ def run_deploy_embedded_compiled_code(cfg):
   src_path = Path(cfg['generate_embedded_code']['gen_code_dir']) / cfg['generate_embedded_code']['gen_code_source_folder_name']
 
   # assertions
-  assert src_path.is_dir(), "Generated code does not exist in {}, run code creation first!".format(gen_code_dir)
+  assert src_path.is_dir(), "Generated code does not exist in {}, run code creation first!".format(src_path)
 
   # toolchain: flash, and monitor
   toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])

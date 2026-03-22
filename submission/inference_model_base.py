@@ -1,8 +1,6 @@
 # --
 # inference model base class
 
-import numpy as np
-
 
 class InferenceModelBase():
   """

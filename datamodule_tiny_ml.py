@@ -11,6 +11,7 @@ import gzip
 import functools
 
 from pathlib import Path
+from feature_handler import FeatureHandler
 
 
 class DatamoduleTinyMl(torch.utils.data.Dataset):
@@ -44,8 +45,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     self.intermediate_info = {}
     self.cache_info = {}
     self.load_info = {}
-    self.feature_constants = None
-    self.do_windows_fn = None
+    self.feature_handler = None
 
     # assertions
     assert Path(self.cfg['dataset']['root_path']).is_dir(), "***No dataset root path exists: [{}]".format(self.cfg['dataset']['root_path'])
@@ -462,41 +462,11 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     add something before file processing
     """
 
-    # packages for feature extraction
-    from biodcase_tiny.feature_extraction.feature_extraction import process_window, make_constants
-    from numpy.lib.stride_tricks import sliding_window_view
-
     # add more cache info
     self.cache_info.update({'x_len': None, 'fs': None, 'feature_size_origin': None})
 
-    # feature constants
-    self.feature_constants = make_constants(
-      win_samples=self.cfg['feature_extraction']['window_len'],
-      sample_rate=self.cfg['target_sample_rate'],
-      window_scaling_bits=self.cfg['feature_extraction']['window_scaling_bits'],
-      mel_n_channels=self.cfg['feature_extraction']['mel_n_channels'],
-      mel_low_hz=self.cfg['feature_extraction']['mel_low_hz'],
-      mel_high_hz=self.cfg['feature_extraction']['mel_high_hz'],
-      mel_post_scaling_bits=self.cfg['feature_extraction']['mel_post_scaling_bits'],
-    )
-
-    # window function
-    apply_windowed = lambda data, window_len, window_stride, fn: np.array([fn(row) for row in sliding_window_view(data, window_len)[::window_stride]])
-
-    # this partial stuff is just a way to set all config parameters, so we have a function that only takes data as input
-    self.do_windows_fn = functools.partial(
-      apply_windowed,
-      window_len=self.cfg['feature_extraction']['window_len'],
-      window_stride=self.cfg['feature_extraction']['window_stride'],
-      fn=functools.partial(
-        process_window,
-        hanning=self.feature_constants.hanning_window,
-        mel_constants=self.feature_constants.mel_constants,
-        fft_twiddle=self.feature_constants.fft_twiddle,
-        window_scaling_bits=self.feature_constants.window_scaling_bits,
-        mel_post_scaling_bits=self.feature_constants.mel_post_scaling_bits
-      ),
-    )
+    # feature handler init
+    self.feature_handler = FeatureHandler(**self.get_feature_handler_config())
 
 
   def at_caching_add_something_after_file_processing(self):
@@ -525,14 +495,8 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     data = np.load(str(file))
     x, fs = data['x'], data['fs']
 
-    # compute features
-    features = self.do_windows_fn(x).astype(np.float32)
-
-    # transpose features: [rows x cols] = [frequency bins x time frames]
-    features = features.T
-
-    # normalize features
-    if self.cfg['normalize_features']: features = (features - np.min(features)) / np.ptp(features)
+    # extract features
+    features = self.feature_handler.extract(x)
 
     # cache info update
     if self.cache_info['x_len'] is None: self.cache_info['x_len'] = len(x)
@@ -627,6 +591,13 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     get spec sampling rate (fs)
     """
     return self.cfg['target_sample_rate'] / self.cfg['feature_extraction']['window_stride']
+
+
+  def get_feature_handler_config(self):
+    """
+    get kwargs for feature handler from config
+    """
+    return {'target_sample_rate': self.cfg['target_sample_rate'], 'normalize_features': self.cfg['normalize_features'], **self.cfg['feature_extraction']}
 
 
   def get_label_dict(self): return self.label_dict
