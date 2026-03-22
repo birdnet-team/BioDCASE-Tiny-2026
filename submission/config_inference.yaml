@@ -1,0 +1,26 @@
+# --
+# config inference
+
+# inference handler
+inference_handler:
+
+  # todo:
+  # model
+
+  # feature handler
+  feature_handler:
+    module: feature_handler
+    attr: FeatureHandler
+    args: []
+    kwargs: 
+      target_sample_rate: 24000
+      window_len: 4096
+      window_stride: 512
+      window_scaling_bits: 12
+      mel_n_channels: 40
+      mel_low_hz: 125
+      mel_high_hz: 7500
+      mel_post_scaling_bits: 6
+      transpose_features_extracted: True
+      normalize_features: True
+      to_float: True
