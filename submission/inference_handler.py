@@ -1,6 +1,7 @@
 # --
 # inference handler
 
+import torch
 import numpy as np
 import sys
 import importlib
@@ -78,9 +79,25 @@ class InferenceHandler():
 
     # classes
     feature_handler_class = getattr(importlib.import_module(self.cfg['feature_handler']['module']), self.cfg['feature_handler']['attr'])
+    model_class = getattr(importlib.import_module(self.cfg['model']['module']), self.cfg['model']['attr'])
 
     # instances
     self.feature_handler = feature_handler_class(*self.cfg['feature_handler']['args'], **self.cfg['feature_handler']['kwargs'])
+
+    # determine feature size for model
+    feature_sample_test_shape = self.feature_handler.extract(np.random.randn(self.cfg['target_sample_rate'] * self.cfg['target_wav_length_sec'])).shape
+
+    # add channel dimension if required
+    if len(feature_sample_test_shape) == 2: feature_sample_test_shape = (1,) + feature_sample_test_shape
+
+    # model kwargs
+    model_kwargs = {'input_shape': list(feature_sample_test_shape), 'num_classes': 11}
+
+    # model
+    self.model = model_class(*self.cfg['feature_handler']['args'], **{**self.cfg['feature_handler']['kwargs'], **model_kwargs})
+
+    # todo:
+    # load model
 
 
   def infer(self, wav, fs=24000):
@@ -91,21 +108,24 @@ class InferenceHandler():
     # wav check
     self.wav_check(wav, fs)
 
-    # todo:
     # feature extraction
-    # model inference
+    features = self.feature_handler.extract(wav)
 
-    return None
+    # to torch
+    features = torch.from_numpy(features[np.newaxis, :])
+
+    # model inference
+    y_hat = self.model.predict(features)
+
+    print("predict: ", y_hat)
+    
+    return y_hat
 
 
   def check_model(self):
     """
     check model - must have a inference function: predict
     """
-
-    # todo:
-    # model
-    return 
 
     # assert existance
     assert not self.model is None, "Model is not initialized (still None)!"
@@ -158,6 +178,7 @@ if __name__ == '__main__':
 
   # test audio
   waveform = np.random.randn(24000 * 3)
+  fs = 24000
 
   # infer
-  inference_handler.infer(waveform)
+  inference_handler.infer(waveform, fs)

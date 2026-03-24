@@ -1,11 +1,15 @@
 # --
 # config inference
 
+
+
 # inference handler
 inference_handler:
 
-  # todo:
-  # model
+  # add python paths (relative to inference handler or absolute)
+  add_python_paths: []
+  target_sample_rate: 24000
+  target_wav_length_sec: 3
 
   # feature handler
   feature_handler:
@@ -24,3 +28,12 @@ inference_handler:
       transpose_features_extracted: True
       normalize_features: True
       to_float: True
+
+  # model
+  model:
+    module: model_tiny_ml
+    attr: ModelTinyMl
+    args: []
+    kwargs: 
+      input_shape: 
+      num_classes: 11
