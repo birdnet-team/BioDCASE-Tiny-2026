@@ -33,7 +33,8 @@ class ModelBase(torch.nn.Module):
     self.add_members()
 
     # create save path
-    if not Path(self.cfg['save_path']).is_dir(): Path(self.cfg['save_path']).mkdir(parents=True)
+    if not self.cfg['is_inference_model']:
+      if not Path(self.cfg['save_path']).is_dir(): Path(self.cfg['save_path']).mkdir(parents=True)
 
     # print device
     if self.cfg['verbose']: print("{} on device: {}".format(self.cfg['model_name'], self.device) + ("\nGPU: {}".format(torch.cuda.get_device_name(self.device)) if torch.cuda.is_available() and not self.cfg['device']['use_cpu'] else ""))
@@ -59,6 +60,7 @@ class ModelBase(torch.nn.Module):
       'device': {'use_cpu': False, 'device_name': 'cuda:0'},
       'criterion': {'module': 'torch.nn', 'attr': 'CrossEntropyLoss', 'kwargs': {}},
       'optimizer': {'module': 'torch.optim', 'attr': 'Adam', 'kwargs': {'lr': 0.0001, 'betas': [0.9, 0.999]}},
+      'is_inference_model': False,
       'verbose': False
     }
 
@@ -187,6 +189,11 @@ class ModelBase(torch.nn.Module):
     """
     save model
     """
+
+    # inference model check
+    if self.cfg['is_inference_model']:
+      print("***Could not be saved, marked as inference model!!!")
+      return
 
     # save as torch model
     torch.save(self.state_dict(), self.model_file_path)

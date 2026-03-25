@@ -16,6 +16,7 @@ tensorflow
 pyarrow
 pyyaml
 pydantic
+soundfile
 
 
 # removed these:

@@ -4,6 +4,7 @@
 # ignore directory
 output/
 data/
+submission/reports
 
 # virtual env
 .venv

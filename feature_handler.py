@@ -102,8 +102,6 @@ class FeatureHandler():
     # ensure integer - required for our tiny ml feature extractions
     if np.issubdtype(x.dtype, np.floating):
 
-      print("float, convert to int")
-
       # normalize [-1, 1]
       x = x / np.max(np.abs(x))
 

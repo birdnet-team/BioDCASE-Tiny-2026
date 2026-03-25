@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Iterable
 
 import yaml
-import librosa
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
@@ -20,7 +19,10 @@ from paths import CLIPS_DIR, PREPROC_PRQ_PATH
 
 _PREPROC_DASK_BATCH_SIZE = 1000
 
+# new folder structure
 SPLIT_FOLDER_TO_SPLIT = {"train": "train", "val": "validation", "test": "test"}
+
+# old folder structure (biodcase2025)
 #SPLIT_FOLDER_TO_SPLIT = {"Training_Set": "train", "Validation_Set": "validation"}
 
 
@@ -74,19 +76,14 @@ def run_data_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path
     slice_data = []
 
     # get class dict
-    actual_class_dict = kwargs.get('class_dict')
-    assert actual_class_dict is not None
+    actual_label_dict = kwargs.get('label_dict')
+    assert actual_label_dict is not None, "Label dict does not exist!"
 
     # for each sample
     for path in batch:
 
-      # todo: resample all to specific fs
       # load audio
-      #audio_array, sample_rate = librosa.load(path, sr=config.data_preprocessing.sample_rate, mono=True)
-      audio_array, sample_rate = librosa.load(path, sr=None, mono=True)
-
-      # info
-      #print("path: ", Path(path).name), print("fs: ", sample_rate), print("class: ", actual_class_dict[path.parent.name]), print("split: ", SPLIT_FOLDER_TO_SPLIT.get(path.parents[1].name, None)), print("soundfile: ", soundfile.info(path))
+      audio_array, sample_rate = soundfile.read(path)
 
       # to int16 conversion for serialization
       audio_array_int16 = (audio_array * np.iinfo(np.int16).max).astype(np.int16)
@@ -98,7 +95,7 @@ def run_data_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path
       slice_data.extend([{
         "data": audio_slice,
         "path": str(path),
-        "label": actual_class_dict[path.parent.name],
+        "label": actual_label_dict[path.parent.name],
         "split": SPLIT_FOLDER_TO_SPLIT.get(path.parents[1].name, None),
         "sample_rate": sample_rate
         }])
@@ -110,10 +107,10 @@ def run_data_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path
   assert len(clips), "Could not find .wav files in {}".format(clips_dir)
 
   # create class dict
-  class_dict = {k: i for i, k in enumerate(sorted(np.unique([str(Path(clip.parent.name)) for clip in clips]).tolist()))}
+  label_dict = {k: i for i, k in enumerate(sorted(np.unique([str(Path(clip.parent.name)) for clip in clips]).tolist()))}
 
   # save class dict
-  yaml.dump({'class_dict': class_dict}, open(preproc_prq_path.parent / 'class_dict.yaml', 'w'))
+  yaml.dump({'label_dict': label_dict}, open(preproc_prq_path.parent / 'label_dict.yaml', 'w'))
 
   batches = []
   total_batches = (len(clips) + _PREPROC_DASK_BATCH_SIZE - 1) // _PREPROC_DASK_BATCH_SIZE
@@ -140,7 +137,7 @@ def run_data_preprocessing(config: Config, clips_dir=CLIPS_DIR, preproc_prq_path
         "label": pd.Series(dtype="int32"),
         "sample_rate": pd.Series(dtype="int32"),
         }),
-      class_dict=class_dict
+      label_dict=label_dict
     )
 
     # make sure array is serialized correctly (data)

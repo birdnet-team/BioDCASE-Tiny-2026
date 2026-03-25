@@ -1,6 +1,7 @@
 # --
 # biodcase 2026 - tiny ml (task 3)
 
+import yaml
 import sys
 import torch
 import numpy as np
@@ -15,7 +16,7 @@ from biodcase_tiny.embedded.esp_toolchain import ESPToolchain
 from biodcase_tiny.feature_extraction.feature_extraction import make_constants
 
 
-def run_model_training(cfg, model, dataloader_train, dataloader_validation):
+def run_model_training(cfg, model, dataloader_train, dataloader_validation, label_dict):
   """
   run model training
   """
@@ -62,6 +63,9 @@ def run_model_training(cfg, model, dataloader_train, dataloader_validation):
 
   # save model in case of no early stopping
   model.save(save_also_as_tflite=True)
+
+  # save also label dict
+  yaml.dump({'label_dict': label_dict}, open(Path(model.get_save_path()) / 'label_dict.yaml', 'w'))
 
 
 def run_model_testing(cfg, model, dataloader_test, label_dict):
@@ -132,7 +136,6 @@ def run_create_target_embedded_src_code(cfg, model_path):
 
   # target creation, validation, and saving of tflite model
   target = ESPTarget(template_dir, model_path, feature_config, reference_dataset_path=None, quantize=cfg['generate_embedded_code']['quantize'])
-  target.validate()
 
   # source path
   src_path = gen_code_dir / cfg['generate_embedded_code']['gen_code_source_folder_name']
@@ -181,10 +184,8 @@ if __name__ == '__main__':
   tiny ml starts here
   """
 
-  import yaml
-
   # yaml config file
-  cfg = yaml.safe_load(open("./config.yaml"))
+  cfg = yaml.safe_load(open('./config.yaml'))
 
   # info
   print("Hello Tiny ML 2026, version: {}".format(cfg['version']))
@@ -204,7 +205,7 @@ if __name__ == '__main__':
   model = ModelTinyMl(cfg['model'], input_shape=datamodule_train.get_feature_shape_at_load(), num_classes=len(datamodule_train.get_label_dict()))
 
   # run model training
-  run_model_training(cfg, model, dataloader_train, dataloader_validation)
+  run_model_training(cfg, model, dataloader_train, dataloader_validation, label_dict=datamodule_test.get_label_dict())
 
   # run model testing
   run_model_testing(cfg, model, dataloader_test, label_dict=datamodule_test.get_label_dict())

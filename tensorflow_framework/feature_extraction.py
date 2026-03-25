@@ -103,7 +103,7 @@ def run_feature_extraction(config: Config, preproc_prq_path=PREPROC_PRQ_PATH, fe
   data = dd.read_parquet(preproc_prq_path)
 
   # read and save yaml of class dict also to feature extraction
-  yaml.dump(yaml.safe_load(open(preproc_prq_path.parent / 'class_dict.yaml')), open(features_prq_path.parent / 'class_dict.yaml', 'w'))
+  yaml.dump(yaml.safe_load(open(preproc_prq_path.parent / 'label_dict.yaml')), open(features_prq_path.parent / 'label_dict.yaml', 'w'))
 
   # feature extraction config
   fe_config = config.feature_extraction

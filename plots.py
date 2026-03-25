@@ -71,34 +71,6 @@ def add_frame_time_to_axis(ax, num_samples, **kwargs):
   ax.set_xticks(s_times)
   ax.set_xticklabels(x_times)
   ax.set_xlabel('Time [s]')
-
-
-# def add_frequency_to_axis(ax, num_samples, **kwargs):
-#   """
-#   add time to axis
-#   """
-
-#   # fs must be in kwargs
-#   if not kwargs.get('feature_type') in ['spec', 'log_spec', 'log_mel_spec']: return
-#   if 'fs' not in kwargs.keys(): return
-
-#   # mel frequencies
-#   has_mel_frequencies = 'mel_frequencies' in kwargs.keys() and kwargs.get('feature_type') in ['log_mel_spec']
-
-#   # fs
-#   fs = kwargs['fs']
-
-#   # frequencies
-#   frequencies = np.arange(0, num_samples) * ((fs//2) / (num_samples - 1)) if not has_mel_frequencies else kwargs['mel_frequencies']
-
-#   # frequencie labels
-#   s_frequencies = np.arange(0, len(frequencies))[::np.max([num_samples//10, 1])]
-#   x_frequencies = ['{:.1f}'.format(ti) for ti in frequencies][::np.max([num_samples//10, 1])]
-
-#   # set axis
-#   ax.set_yticks(s_frequencies)
-#   ax.set_yticklabels(x_frequencies)
-#   ax.set_ylabel('{}Frequency [Hz]'.format('Mel ' if has_mel_frequencies else ''))
   
 
 def plot_waveform_and_features(waveform, features, plot_path=None, show_plot_flag=False, **kwargs):

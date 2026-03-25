@@ -23,6 +23,7 @@ to generate the final code.
 import os
 import shutil
 import jinja2
+import importlib
 
 from copy import deepcopy
 from pathlib import Path
@@ -34,7 +35,6 @@ class ESPTarget():
   esp target - src code preparation for esp32-s3 with templates - jinja
   """
 
-  #def __init__(self, model: Model | bytes, feature_config: FeatureConstants, reference_dataset: Dataset | None = None, quantize: bool = False):
   def __init__(self, template_dir: Path, model_path: Path, feature_config: FeatureConstants, reference_dataset_path: Path | None = None, quantize: bool = False):
 
     # arguments
@@ -84,6 +84,11 @@ class ESPTarget():
     """
     Validate Target inputs, including the compatibility of model.
     """
+
+    # no tensorflow installed no model check
+    if self._model_ops is None: 
+      print("***No model check done!")
+      return
 
     # check model compatibility
     if None in self._model_ops:
@@ -191,22 +196,34 @@ class ESPTarget():
     (https://github.com/tensorflow/tflite-micro/tree/main/tensorflow/lite/micro/tools/gen_micro_mutable_op_resolver/generate_micro_mutable_op_resolver_from_model.py)
     """
 
+    # skip if tensorflow is not installed
+    if not bool(importlib.util.find_spec('tensorflow')): 
+      print("\n***@esp_target.get_model_ops_and_acts: tensorflow not installed! -> skip model op check")
+      return None
+
     from tensorflow.lite.tools import visualize as tflite_vis
 
     custom_op_found = False
     operators_and_activations = set()
     data = tflite_vis.CreateDictFromFlatbuffer(model_buf)
+
+    # operation check
     for op_code in data["operator_codes"]:
       if op_code["custom_code"] is None:
         op_code["builtin_code"] = max(op_code["builtin_code"], op_code["deprecated_builtin_code"])
       else:
         custom_op_found = True
         operators_and_activations.add(tflite_vis.NameListToString(op_code["custom_code"]))
+
+    # double check for custom operations
     for op_code in data["operator_codes"]:
+
       # Custom operator already added.
       if custom_op_found and tflite_vis.BuiltinCodeToName(op_code["builtin_code"]) == "CUSTOM":
         continue
-      operators_and_activations.add(tflite_vis.BuiltinCodeToName(op_code["builtin_code"]))  # will be None if unknown
+
+      # will be None if unknown
+      operators_and_activations.add(tflite_vis.BuiltinCodeToName(op_code["builtin_code"]))
     return operators_and_activations
 
 

@@ -1,0 +1,12 @@
+label_dict:
+  Background: 0
+  Common_Chaffinch: 1
+  Common_Chiffchaff: 2
+  Eurasian_Blackbird: 3
+  Eurasian_Blackcap: 4
+  Eurasian_Blue_Tit: 5
+  Great_Spotted_Woodpecker: 6
+  Great_Tit: 7
+  Mallard: 8
+  Song_Thrush: 9
+  Tawny_Owl: 10

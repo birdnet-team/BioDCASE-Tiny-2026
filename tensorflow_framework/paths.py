@@ -1,3 +1,6 @@
+# --
+# paths
+
 from pathlib import Path
 
 PIPELINE_CONFIG_FILE = Path(__file__).parent / "pipeline_config.yaml"
@@ -35,3 +38,6 @@ EVAL_CLIPS_DIR = RAW_OUT_DIR / "eval_clips"
 
 # template dir
 TEMPLATE_DIR = Path(__file__).parent.parent / "biodcase_tiny/embedded/firmware"
+
+# create directories
+[p.mkdir() for p in [RAW_OUT_DIR, PREPROC_DIR, FEATURES_DIR, MODELS_DIR, REPORTING_DIR, GEN_CODE_DIR] if not p.exists()]

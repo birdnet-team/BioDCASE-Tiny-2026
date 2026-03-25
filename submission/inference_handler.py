@@ -1,6 +1,7 @@
 # --
 # inference handler
 
+import yaml
 import torch
 import numpy as np
 import sys
@@ -29,13 +30,14 @@ class InferenceHandler():
     # members
     self.model = None
     self.feature_handler = None
+    self.model_dir = Path(self.cfg['model_dir'])
+    self.label_dict = None
+
+    # some basic checks
+    assert self.model_dir.is_dir(), "Your model directory does not exist: {}!".format(self.model_dir)
 
     # define
-    self.define()
-
-    # checks
-    self.check_model()
-    self.check_feature_handler()
+    self.define_and_check()
 
 
   def cfg_init(self, **cfg_overwrites):
@@ -72,10 +74,19 @@ class InferenceHandler():
     self.cfg = {**cfg_default, **cfg_overwrites, **self.cfg, **self.kwargs}
 
 
-  def define(self):
+  def define_and_check(self):
     """
-    define
+    define and check
     """
+
+    # label dict file in same folder as model
+    assert Path(self.cfg['label_dict_yaml_path']).is_file(), "Label dict yaml file does not exist at: {}".format(self.cfg['label_dict_yaml_path'])
+
+    # extract label dict
+    self.label_dict = yaml.safe_load(open(self.cfg['label_dict_yaml_path']))['label_dict']
+
+    # info
+    print("Using num classes: {} in label dict: {}".format(len(self.label_dict), self.label_dict))
 
     # classes
     feature_handler_class = getattr(importlib.import_module(self.cfg['feature_handler']['module']), self.cfg['feature_handler']['attr'])
@@ -84,6 +95,9 @@ class InferenceHandler():
     # instances
     self.feature_handler = feature_handler_class(*self.cfg['feature_handler']['args'], **self.cfg['feature_handler']['kwargs'])
 
+    # check feature handler
+    self.check_feature_handler()
+
     # determine feature size for model
     feature_sample_test_shape = self.feature_handler.extract(np.random.randn(self.cfg['target_sample_rate'] * self.cfg['target_wav_length_sec'])).shape
 
@@ -91,13 +105,32 @@ class InferenceHandler():
     if len(feature_sample_test_shape) == 2: feature_sample_test_shape = (1,) + feature_sample_test_shape
 
     # model kwargs
-    model_kwargs = {'input_shape': list(feature_sample_test_shape), 'num_classes': 11}
+    model_kwargs = {'input_shape': list(feature_sample_test_shape), 'num_classes': len(self.label_dict), 'is_inference_model': True}
 
     # model
     self.model = model_class(*self.cfg['feature_handler']['args'], **{**self.cfg['feature_handler']['kwargs'], **model_kwargs})
 
-    # todo:
+    # check model
+    self.check_model()
+
     # load model
+    model_files = list(self.model_dir.glob('*' + self.cfg['saved_model_extension']))
+
+    # assertions about model file
+    assert len(model_files), "No model files found in {} with extension: {}".format(self.model_dir, self.cfg['saved_model_extension'])
+    assert len(model_files) == 1, "Sorry only one model allowed in {}, found: {}".format(self.model_dir, len(model_files))
+
+    # get model file
+    target_model_file = model_files[0]
+
+    # info
+    print("\nModel class: {}\nload model file: [{}]\n".format(self.model.__class__.__name__, target_model_file))
+
+    # load model
+    self.model.load(target_model_file)
+
+    # set to evaluation model
+    self.model.set_model_to_evaluation_mode()
 
 
   def infer(self, wav, fs=24000):
@@ -117,8 +150,6 @@ class InferenceHandler():
     # model inference
     y_hat = self.model.predict(features)
 
-    print("predict: ", y_hat)
-    
     return y_hat
 
 
@@ -135,6 +166,8 @@ class InferenceHandler():
 
     # check methods
     assert 'predict' in method_list, "Your model class has no method 'predict'!!!"
+    assert 'load' in method_list, "Your model class has no method 'load'!!!"
+    assert 'set_model_to_evaluation_mode' in method_list, "Your model class has no method 'set_model_to_evaluation_mode'!!!"
 
 
   def check_feature_handler(self):
@@ -162,16 +195,19 @@ class InferenceHandler():
     assert len(wav) == self.cfg['target_wav_length_sec'] * fs, "Length of your audio is wrong! Yours: {}, should be: {}".format(len(wav), self.cfg['target_wav_length_sec'] * fs)
 
 
+  # --
+  # getter
+
+  def get_label_dict(self): return self.label_dict
+
 
 if __name__ == '__main__':
   """
   inference handler
   """
 
-  import yaml
-
   # yaml config file
-  cfg = yaml.safe_load(open("./config_inference.yaml"))
+  cfg = yaml.safe_load(open('./config_inference.yaml'))
 
   # inference handler
   inference_handler = InferenceHandler(cfg['inference_handler'], add_python_paths=[str(Path(__file__).parent.parent)])
@@ -181,4 +217,7 @@ if __name__ == '__main__':
   fs = 24000
 
   # infer
-  inference_handler.infer(waveform, fs)
+  y_hat = inference_handler.infer(waveform, fs)
+
+  # info
+  print("predicted: ", y_hat)

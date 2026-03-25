@@ -33,7 +33,7 @@ def set_seeds(seed):
   keras.utils.set_random_seed(seed)
 
 
-def make_tf_datasets(data: pd.DataFrame, features_shape, class_dict, buffer_size=10000, seed=42, batch_size=32) -> tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
+def make_tf_datasets(data: pd.DataFrame, features_shape, label_dict, buffer_size=10000, seed=42, batch_size=32) -> tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
   """
   tensorflow dataset
   """
@@ -48,7 +48,7 @@ def make_tf_datasets(data: pd.DataFrame, features_shape, class_dict, buffer_size
     features = np.array(group_data["features"].to_list()).reshape((-1, *features_shape, 1))
 
     # one hot labels
-    one_hot_labels = to_categorical(group_data["label"], num_classes=len(class_dict))
+    one_hot_labels = to_categorical(group_data["label"], num_classes=len(label_dict))
 
     # dataset
     dataset = tf.data.Dataset.from_tensor_slices((features, one_hot_labels))
@@ -102,7 +102,7 @@ def run_model_training(config: Config):
   data = pd.read_parquet(FEATURES_PRQ_PATH)
 
   # load class dict
-  class_dict = yaml.safe_load(open(FEATURES_PRQ_PATH.parent / 'class_dict.yaml'))['class_dict']
+  label_dict = yaml.safe_load(open(FEATURES_PRQ_PATH.parent / 'label_dict.yaml'))['label_dict']
 
   # got flattened when writing parquet, restore shape now
   data["features"] = data["features"].apply(lambda x: x.reshape(features_shape))
@@ -112,14 +112,14 @@ def run_model_training(config: Config):
   train_ds, valid_ds, reference_ds = make_tf_datasets(
     data,
     features_shape,
-    class_dict,
+    label_dict,
     config.model_training.shuffle_buff_n, 
     config.model_training.seed,
     config.model_training.batch_size
   )
 
   # model creation
-  model = create_model((*features_shape, 1), num_output_classes=len(class_dict))
+  model = create_model((*features_shape, 1), num_output_classes=len(label_dict))
 
   # model training
   model = train_model(model, train_ds, valid_ds, config, class_weight)
@@ -135,7 +135,7 @@ def run_model_training(config: Config):
   print("Training finished successfully!\nConfusion matrix saved in [{}].".format(CM_FIG_PATH))
 
   # plot confusion matrix
-  plot_confusion_matrix(y_true, y_pred, labels=list(class_dict.keys()), plot_path=CM_FIG_PATH, show_plot_flag=False, apply_argmax=True)
+  plot_confusion_matrix(y_true, y_pred, labels=list(label_dict.keys()), plot_path=CM_FIG_PATH, show_plot_flag=False, apply_argmax=True)
 
 
 if __name__ == "__main__":

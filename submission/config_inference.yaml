@@ -1,7 +1,9 @@
 # --
 # config inference
 
-
+# test files
+test_file_dir: './test_wav_files'
+test_files_ext: '.wav'
 
 # inference handler
 inference_handler:
@@ -10,6 +12,9 @@ inference_handler:
   add_python_paths: []
   target_sample_rate: 24000
   target_wav_length_sec: 3
+  model_dir: './your_submission_model'
+  saved_model_extension: '.pth'
+  label_dict_yaml_path: './your_submission_model/label_dict.yaml'
 
   # feature handler
   feature_handler:
@@ -34,6 +39,4 @@ inference_handler:
     module: model_tiny_ml
     attr: ModelTinyMl
     args: []
-    kwargs: 
-      input_shape: 
-      num_classes: 11
+    kwargs: {}
