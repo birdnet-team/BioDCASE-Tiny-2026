@@ -10,6 +10,7 @@ import docker
 from pathlib import Path
 from typing import Optional
 from tqdm import tqdm
+from .esp_monitor_parser import parse_monitor_output
 
 # logger
 logger = logging.getLogger("biodcase_tiny")
@@ -155,12 +156,25 @@ class ESPToolchain:
       devices=[f"{self.port}:{self.port}"],
       tty=True,
     )
+
+    collected_lines = []
+    
     try:
       output = container.attach(stdout=True, stream=True, logs=True)
       for line in self.line_accumulator(output):
-        print(line.decode("utf-8").rstrip())
+        decoded = line.decode("utf-8").rstrip()
+        print(decoded)
+        collected_lines.append(decoded)
+        if "main_task: Returned from app_main()" in decoded:
+          parse_monitor_output(collected_lines, report_dir=Path("."))
     except (Exception, KeyboardInterrupt):
       container.stop()
+    finally:
+      # always attempt to write the report, even on Ctrl+C
+      if collected_lines:
+        parse_monitor_output(collected_lines, report_dir=Path("."))
+
+
 
 
   def line_accumulator(self, byte_iterable):
