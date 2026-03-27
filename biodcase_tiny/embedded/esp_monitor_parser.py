@@ -6,6 +6,7 @@ from datetime import datetime
 # Model location config
 MODEL_DIRS  = [Path("./output/03_model"), Path("./output/03_models")]
 MODEL_NAMES = ["model.tflite", "ModelTinyMl.tflite"]
+OUTPUT_DIRS = [Path("./output/04_reports"), Path("./output/04_reporting")]
 
 
 def _find_tflite() -> Path | None:
@@ -15,6 +16,13 @@ def _find_tflite() -> Path | None:
             candidate = folder / name
             if candidate.exists():
                 return candidate
+    return None
+
+def _find_output_dir() -> Path | None:
+    """Return the first existing output directory across all known options."""
+    for folder in OUTPUT_DIRS:
+        if folder.exists():
+            return folder
     return None
 
 
@@ -132,7 +140,8 @@ def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict
         result["timing_us"]["total"] = sum(times)
 
     # Write YAML
-    report_path = Path(report_dir) / "monitor_report.yaml"
+    output_dir = _find_output_dir() or report_dir
+    report_path = Path(output_dir) / "monitor_report.yaml"
     with open(report_path, "w") as f:
         yaml.dump(result, f, default_flow_style=False, sort_keys=False)
 
