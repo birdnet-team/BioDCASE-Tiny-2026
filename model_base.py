@@ -168,7 +168,7 @@ class ModelBase(torch.nn.Module):
     """
 
     # make sure eval mode is activated
-    self.eval()
+    self.set_model_to_evaluation_mode()
 
     # no gradients here
     with torch.no_grad():
@@ -374,7 +374,7 @@ if __name__ == '__main__':
   print("actual: ", y)
   print("prediction: ", y_pred)
   print("loss: ", loss)
-  print("acc: ", torch.sum(y == y_pred).item() / len(y))
+  print("acc: ", torch.mean(y == y_pred).item())
 
   # save model
   model.save()

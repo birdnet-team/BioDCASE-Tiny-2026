@@ -127,9 +127,10 @@ def run_model_training(config: Config):
   # model validation
   y_true, y_pred = predict_validation(model, valid_ds)
 
-  # save model
+  # save model, reference dataset, and label dict
   model.save(KERAS_MODEL_PATH)
   reference_ds.save(str(REFERENCE_DATASET_PATH))
+  yaml.dump({'label_dict': label_dict}, open(KERAS_MODEL_PATH.parent / 'label_dict.yaml', 'w'))
 
   # info
   print("Training finished successfully!\nConfusion matrix saved in [{}].".format(CM_FIG_PATH))

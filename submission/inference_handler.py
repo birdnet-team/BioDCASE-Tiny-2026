@@ -50,6 +50,10 @@ class InferenceHandler():
       'add_python_paths': [],
       'target_sample_rate': 24000,
       'target_wav_length_sec': 3,
+      'model_dir': './your_submission_model',
+      'saved_model_extension': '.pth',
+      'label_dict_yaml_path': './your_submission_model/label_dict.yaml',
+      'use_argmax_after_model_predict': False,
       'feature_handler': {
         'module': 'feature_handler',
         'attr': 'FeatureHandler',
@@ -67,6 +71,12 @@ class InferenceHandler():
           'normalize_features': True,
           'to_float': True,
           }
+        },
+      'model': {
+        'module': 'model_tiny_ml',
+        'attr': 'ModelTinyMl',
+        'args': [],
+        'kwargs': {},
         },
       }
 
@@ -88,9 +98,8 @@ class InferenceHandler():
     # info
     print("Using num classes: {} in label dict: {}".format(len(self.label_dict), self.label_dict))
 
-    # classes
+    # class
     feature_handler_class = getattr(importlib.import_module(self.cfg['feature_handler']['module']), self.cfg['feature_handler']['attr'])
-    model_class = getattr(importlib.import_module(self.cfg['model']['module']), self.cfg['model']['attr'])
 
     # instances
     self.feature_handler = feature_handler_class(*self.cfg['feature_handler']['args'], **self.cfg['feature_handler']['kwargs'])
@@ -104,16 +113,16 @@ class InferenceHandler():
     # add channel dimension if required
     if len(feature_sample_test_shape) == 2: feature_sample_test_shape = (1,) + feature_sample_test_shape
 
-    # model kwargs
-    model_kwargs = {'input_shape': list(feature_sample_test_shape), 'num_classes': len(self.label_dict), 'is_inference_model': True}
+    # create model instance
+    self.create_and_load_model_instance(feature_sample_test_shape)
 
-    # model
-    self.model = model_class(*self.cfg['feature_handler']['args'], **{**self.cfg['feature_handler']['kwargs'], **model_kwargs})
 
-    # check model
-    self.check_model()
+  def create_and_load_model_instance(self, feature_sample_test_shape):
+    """
+    create model instance
+    """
 
-    # load model
+    # get model files
     model_files = list(self.model_dir.glob('*' + self.cfg['saved_model_extension']))
 
     # assertions about model file
@@ -122,6 +131,29 @@ class InferenceHandler():
 
     # get model file
     target_model_file = model_files[0]
+
+    # keras model?
+    is_keras_model = self.cfg['model']['module'] == 'keras' and self.cfg['model']['attr'] == 'Model'
+
+    # keras -> simply load the model and everything is set up
+    if is_keras_model: 
+      import keras
+      self.model = keras.models.load_model(target_model_file)
+      print("\nKeras model!\nload model file: [{}]\n".format(target_model_file))
+      return
+
+    # all other models than keras must be checked!!
+    # model class
+    model_class = getattr(importlib.import_module(self.cfg['model']['module']), self.cfg['model']['attr'])
+
+    # model kwargs
+    model_kwargs = {'input_shape': list(feature_sample_test_shape), 'num_classes': len(self.label_dict), 'is_inference_model': True}
+
+    # model
+    self.model = model_class(*self.cfg['model']['args'], **{**self.cfg['model']['kwargs'], **model_kwargs})
+
+    # check model
+    self.check_model()
 
     # info
     print("\nModel class: {}\nload model file: [{}]\n".format(self.model.__class__.__name__, target_model_file))
@@ -144,11 +176,11 @@ class InferenceHandler():
     # feature extraction
     features = self.feature_handler.extract(wav)
 
-    # to torch
-    features = torch.from_numpy(features[np.newaxis, :])
-
     # model inference
     y_hat = self.model.predict(features)
+
+    # do argmax
+    if self.cfg['use_argmax_after_model_predict']: y_hat = np.argmax(y_hat, axis=-1)
 
     return y_hat
 
@@ -195,6 +227,12 @@ class InferenceHandler():
     assert len(wav) == self.cfg['target_wav_length_sec'] * fs, "Length of your audio is wrong! Yours: {}, should be: {}".format(len(wav), self.cfg['target_wav_length_sec'] * fs)
 
 
+  def info(self):
+    """
+    info
+    """
+    print("\n--\nInference handler with model class: {}".format(self.model.__class__.__name__))
+
   # --
   # getter
 
@@ -207,17 +245,24 @@ if __name__ == '__main__':
   """
 
   # yaml config file
-  cfg = yaml.safe_load(open('./config_inference.yaml'))
+  cfg = yaml.safe_load(open('./config.yaml'))
 
   # inference handler
-  inference_handler = InferenceHandler(cfg['inference_handler'], add_python_paths=[str(Path(__file__).parent.parent)])
+  inference_handler_pt = InferenceHandler(cfg['inference_handler_pytorch'], add_python_paths=[str(Path(__file__).parent.parent)])
+  inference_handler_tf = InferenceHandler(cfg['inference_handler_tensorflow'], add_python_paths=[str(Path(__file__).parent.parent)])
 
   # test audio
   waveform = np.random.randn(24000 * 3)
   fs = 24000
 
-  # infer
-  y_hat = inference_handler.infer(waveform, fs)
+  # inference handler
+  for inference_handler in [inference_handler_pt, inference_handler_tf]:
 
-  # info
-  print("predicted: ", y_hat)
+    # show some info
+    inference_handler.info()
+
+    # infer
+    y_hat = inference_handler.infer(waveform, fs)
+
+    # info
+    print("predicted: ", y_hat)

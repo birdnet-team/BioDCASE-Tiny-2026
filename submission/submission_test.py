@@ -21,16 +21,17 @@ if __name__ == '__main__':
   """
 
   # yaml config file
-  cfg = yaml.safe_load(open('config_inference.yaml'))
+  cfg = yaml.safe_load(open('config.yaml'))
 
   # report dir
   report_dir = Path(__file__).parent / 'reports'
 
   # assertion
   assert report_dir.exists(), "Something is wrong with your report directory!"
-
-  # inference handler
-  inference_handler = InferenceHandler(cfg['inference_handler'])
+  
+  # inference handler - choose between pytorch or tensorflow
+  inference_handler = InferenceHandler(cfg['inference_handler_tensorflow'])
+  #inference_handler = InferenceHandler(cfg['inference_handler_pytorch'])
 
   # path to test files
   test_files = sorted(list(Path(cfg['test_file_dir']).glob('**/*' + cfg['test_files_ext'])))

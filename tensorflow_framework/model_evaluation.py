@@ -24,6 +24,7 @@ The script reports:
   "[RecordingMicroAllocator] Arena allocation total XXXX bytes"
 """
 
+import yaml
 import json
 import logging
 import shutil
@@ -38,14 +39,14 @@ import click
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from keras.src.metrics import AUC, Accuracy
+import keras
 from tensorflow.python.keras.utils.np_utils import to_categorical
 
 from config import load_config
 from data_preprocessing import run_data_preprocessing
 #from embedded_code_generation import create_target, generate_and_flash
 from feature_extraction import run_feature_extraction
-from paths import CLIPS_DIR, EVAL_CLIPS_DIR, EVAL_ZIP_PATH, GEN_CODE_DIR
+from paths import CLIPS_DIR, EVAL_CLIPS_DIR, EVAL_ZIP_PATH, GEN_CODE_DIR, KERAS_MODEL_PATH
 
 logger = logging.getLogger("biodcase_tiny")
 logger.setLevel(logging.INFO)
@@ -202,7 +203,7 @@ def eval_model(features_shape_json_path: Path, features_prq_path: Path, tflite_m
   y_true = to_categorical(data["label"].values, num_classes=11)
 
   # average precision
-  average_precision = AUC(curve='PR')
+  average_precision = keras.src.metrics.AUC(curve='PR')
   average_precision.update_state(y_true, y_preds)
   print(f"Average precision: {average_precision.result().numpy()}")
 
@@ -285,7 +286,7 @@ def run_evaluation(model_path, config_path, dataset, channel_order, evaluate_emb
       )
 
       # embedded deployment
-      run_deploy_generated_code(config, gen_code_dir=GEN_CODE_DIR)
+      if evaluate_embedded: run_deploy_generated_code(config, gen_code_dir=GEN_CODE_DIR)
 
       #target = create_target(model_path, reference_dataset_path, config, quantize=quantize)
       #model_file.write(target.get_model_buf())
@@ -293,10 +294,50 @@ def run_evaluation(model_path, config_path, dataset, channel_order, evaluate_emb
       #  generate_and_flash(config, target, GEN_CODE_DIR)
 
 
+def run_load_and_test_keras_model_prediction(model_path=KERAS_MODEL_PATH):
+  """
+  load and test keras model
+  """
+
+  # label dict path
+  label_dict_path = Path(model_path.parent) / 'label_dict.yaml'
+
+  # label dict
+  label_dict = yaml.safe_load(open(label_dict_path, 'r'))['label_dict'] if label_dict_path.is_file() else None
+
+  # load model
+  model = keras.models.load_model(model_path)
+
+  # get input shape
+  input_shape = model.get_config()['layers'][0]['config']['batch_shape'][1:]
+
+  # add batch dimension
+  input_shape = (1,) + input_shape
+
+  # generate test sample
+  x = np.random.randn(*input_shape)
+
+  # predict class
+  y = model.predict(x)
+
+  # max prediction
+  y_hat = np.argmax(y, axis=-1)
+
+  # info print
+  print("test input: ", x.shape)
+  print("prediction: ", y)
+  print("argmax: {}".format(y_hat))
+  print("labels: {}".format([list(label_dict.keys())[yi] if label_dict is not None else '?' for yi in y_hat]))
+
+
+
 if __name__ == '__main__':
   """
   model evaluations
   """
 
+  # load and test model
+  run_load_and_test_keras_model_prediction(model_path=KERAS_MODEL_PATH)
+
   # run evaluation
-  run_evaluation()
+  #run_evaluation()
