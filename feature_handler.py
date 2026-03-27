@@ -53,6 +53,8 @@ class FeatureHandler():
       'to_float': True,
       'to_torch': True,
       'add_channel_dimension': True,
+      'add_batch_dimension': False,
+      'channel_dimension_at_end': False,
       }
 
     # config update
@@ -108,7 +110,7 @@ class FeatureHandler():
       # normalize [-1, 1]
       x = x / np.max(np.abs(x))
 
-      # to int16 conversion for serialization
+      # to int16
       x = (x * np.iinfo(np.int16).max).astype(np.int16)
 
     # extract
@@ -121,7 +123,10 @@ class FeatureHandler():
     if self.cfg['transpose_features_extracted']: x_t = x_t.T
 
     # add channel dimension
-    if self.cfg['add_channel_dimension']: x_t = x_t[np.newaxis, :]
+    if self.cfg['add_channel_dimension']: x_t = x_t[np.newaxis, :] if not self.cfg['channel_dimension_at_end'] else x_t[:, :, np.newaxis]
+
+    # add batch dimension
+    if self.cfg['add_batch_dimension']: x_t = x_t[np.newaxis, :]
 
     # normalize [0, 1]
     if self.cfg['normalize_features']: x_t = (x_t - np.min(x_t)) / np.ptp(x_t)
@@ -144,7 +149,7 @@ if __name__ == '__main__':
   waveform = np.random.randn(4096 * 2)
 
   # feature handler
-  feature_handler = FeatureHandler()
+  feature_handler = FeatureHandler(add_channel_dimension=False)
 
   # extract
   features = feature_handler.extract(waveform)

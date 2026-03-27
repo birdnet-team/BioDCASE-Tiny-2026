@@ -34,6 +34,11 @@ inference_handler_pytorch:
       transpose_features_extracted: True
       normalize_features: True
       to_float: True
+      to_torch: True
+      add_channel_dimension: True
+      add_batch_dimension: True
+      channel_dimension_at_end: False
+
 
   # model
   model:
@@ -70,8 +75,12 @@ inference_handler_tensorflow:
       mel_high_hz: 7500
       mel_post_scaling_bits: 6
       transpose_features_extracted: False
-      normalize_features: True
-      to_float: True
+      normalize_features: False
+      to_float: False
+      to_torch: False
+      add_channel_dimension: True
+      add_batch_dimension: True
+      channel_dimension_at_end: True
 
   # model
   model:

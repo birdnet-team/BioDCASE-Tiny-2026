@@ -20,6 +20,11 @@ if __name__ == '__main__':
   submission test
   """
 
+  # hide warnings of tensorflow
+  import os
+  os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+  os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
   # yaml config file
   cfg = yaml.safe_load(open('config.yaml'))
 
@@ -28,10 +33,13 @@ if __name__ == '__main__':
 
   # assertion
   assert report_dir.exists(), "Something is wrong with your report directory!"
-  
+
   # inference handler - choose between pytorch or tensorflow
   inference_handler = InferenceHandler(cfg['inference_handler_tensorflow'])
   #inference_handler = InferenceHandler(cfg['inference_handler_pytorch'])
+
+  # info
+  inference_handler.info()
 
   # path to test files
   test_files = sorted(list(Path(cfg['test_file_dir']).glob('**/*' + cfg['test_files_ext'])))
@@ -73,8 +81,8 @@ if __name__ == '__main__':
   score_dict['accuracy'] = acc
 
   # info score
-  print("accuracy: {:.4f}".format(acc))
-  print("\nTest submission successfuly run!")
+  print("Accuracy: {:.4f}".format(acc))
+  print("\nSuccessful submission test run!")
 
   # dump scores
   yaml.dump({'score_dict': score_dict}, open(report_dir / 'score_dict.yaml', 'w'))

@@ -79,9 +79,6 @@ dataloader_validation_and_test_kwargs:
 
 # model
 model:
-  #'model_name': self.__class__.__name__
-  #input_shape: [32]
-  #num_classes: 11
   save_path: './output/03_model'
   device:
     use_cpu: False
@@ -106,14 +103,14 @@ reports:
 generate_embedded_code:
 
   # template directory
-  template_dir: "./biodcase_tiny/embedded/firmware"
+  template_dir: './biodcase_tiny/embedded/firmware'
 
   # gen code dir
-  gen_code_dir: "./output/05_generated_embedded_code"
-  gen_code_source_folder_name: "src"
+  gen_code_dir: './output/05_generated_embedded_code'
+  gen_code_source_folder_name: 'src'
 
   # replace with your serial device
-  serial_device: "/dev/ttyUSB0"
+  serial_device: '/dev/ttyUSB0'
 
   # quantize
   quantize: False
