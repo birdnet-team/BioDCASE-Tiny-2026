@@ -246,6 +246,8 @@ class InferenceHandler():
 
   def get_label_dict(self): return self.label_dict
   def get_feature_shape(self): return self.feature_shape
+  def get_model_size(self): return Path(self.target_model_file).stat().st_size
+  def get_model_file(self): return self.target_model_file
 
 
 if __name__ == '__main__':

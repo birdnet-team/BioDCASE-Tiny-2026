@@ -6,7 +6,7 @@ from datetime import datetime
 # Model location config
 MODEL_DIRS  = [Path("./output/03_model"), Path("./output/03_models")]
 MODEL_NAMES = ["model.tflite", "ModelTinyMl.tflite"]
-OUTPUT_DIRS = [Path("./output/04_reports"), Path("./output/04_reporting")]
+OUTPUT_DIRS = [Path("./output/04_reports"), Path("./output/04_reporting"), Path("./reports")]
 
 
 def _find_tflite() -> Path | None:

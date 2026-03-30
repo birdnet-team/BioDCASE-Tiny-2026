@@ -5,6 +5,7 @@
 output/
 data/
 submission/reports
+submission/your_generated_code/src
 
 # virtual env
 .venv
