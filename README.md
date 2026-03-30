@@ -13,9 +13,7 @@
   <br><br>
 </div>
 
-This repository contains the development framework for the **BioDCASE-Tiny 2026 competition (Task 3)**, focusing on TinyML implementations for bird species recognition on the ESP32-S3-Korvo-2 development board.
-
-For complete competition details, visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3).
+**BioDCASE-Tiny 2026 competition (Task 3)** - A machine learning challenge to bird sound recognition on tiny hardware, also visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3) for more information.
 
 ## Todos:
 - **@Christian:** create a submission test system (inference model + trained weights + .tflite version of the model) until 26.03.2026
@@ -29,11 +27,11 @@ For complete competition details, visit the [official BioDCASE 2026 Task 3 websi
 ## Background
 
 BioDCASE-Tiny is a competition for developing efficient machine learning models for bird audio recognition that can run on resource-constrained embedded devices. The project uses the ESP32-S3-Korvo-2 development board, which offers audio processing capabilities in a small form factor suitable for field deployment.
+This year we changed the main framework to work on pytorch and transfered the updated tensorflow baseline to the `tensorflow_framework` folder.
 
 ## Table of Contents
-- [Setup and Installation](#setup-and-installation)
-- [Usage](#usage)
 - [Dataset](#dataset)
+- [Setup and Installation](#setup-and-installation)
 - [Development](#development)
 - [ESP32-S3-Korvo-2 Development Board](#esp32-s3-korvo-2-development-board)
 - [Code Structure](#code-structure)
@@ -43,6 +41,33 @@ BioDCASE-Tiny is a competition for developing efficient machine learning models 
 - [Citation](#citation)
 - [Funding](#funding)
 - [Partners](#partners)
+
+## Dataset
+
+The BioDCASE-Tiny 2026 competition uses a 10-bird species (+ 1-background urban) dataset of field recordings from Germany:
+
+- 11 class labels categorized in folders
+- 3,300 recordings of 3 seconds each...
+- audio is sampled at 24 kHz, mono, 16-bit PCM wav files
+
+The dataset is organized as follows:
+
+```
+Development_Set/
+├── Train/
+│   ├── species_1/
+|       ├── recording_1.wav
+|       ├── recording_2.wav
+|       ├── ...
+│   ├── species_2/
+│   ├── ...
+├── Validation/
+│   ├── species_1/
+│   ├── species_2/
+```
+
+Download the dataset from: [BioDCASE-Tiny 2026 Dataset]()
+
 
 ## Setup and Installation
 
@@ -59,7 +84,9 @@ git clone https://github.com/birdnet-team/BioDCASE-Tiny-2026.git
 cd BioDCASE-Tiny-2026
 ```
 
-2. Install your favourite python version, we used 3.13 for testing
+2. Install your favorite python version, we used 3.13 for testing
+
+3. Choose if you want to develop in pytorch or tensorflow. If you choose pytorch, you can continue here. If you choose tensorflow go to the `tensorflow_framework` folder in this repository.
 
 3. Create a virtual environment (recommended)
 
@@ -68,16 +95,33 @@ python3.13 -m venv .venv
 source .venv/bin/activate
 ```
 
-3. Install Python dependencies:
+4. Install Python dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Set your serial device port in the config.yaml
+### Configuration
+
+1. Set your serial device port in the `config.yaml`
 
 ```yaml
 generate_embedded_code:
   serial_device: <YOUR_DEVICE> 
+```
+
+2. Move the downloaded dataset to any location, for instance, `./output/00_raw/` and edit `config.yaml` file at following location:
+```yaml
+datamodule:
+  dataset:
+    root_path: ./output/00_raw/
+```
+you can also change the intermediate and cache (feature) paths at:
+```yaml
+datamodule:
+  intermediate:
+    root_path: ./output/01_intermediate/
+  caching:
+    root_path: ./output/02_features/
 ```
 
 ### Installation and running on Windows
@@ -97,50 +141,6 @@ You might also need to grant some rights to run the deployment:
 ```bash
 sudo adduser $USER dialout
 sudo chmod a+rw $SERIAL_PORT
-```
-
-## Dataset
-
-The BioDCASE-Tiny 2026 competition uses a 10-species dataset of field recordings from Germany:
-
-- 3,300 recordings of 3 seconds each...
-- audio is sampled at 16 kHz, mono, 16-bit PCM wav files
-
-### Dataset Structure
-
-The dataset is organized as follows:
-
-```
-Development_Set/
-├── Train/
-│   ├── species_1/
-|       ├── recording_1.wav
-|       ├── recording_2.wav
-|       ├── ...
-│   ├── species_2/
-│   ├── ...
-├── Validation/
-│   ├── species_1/
-│   ├── species_2/
-```
-
-### Download and Setup
-
-Download the dataset from: [BioDCASE-Tiny 2026 Dataset]()
-
-Save the dataset at any location you want, for instance, /output/00_raw/ and edit the config.yaml file at following location
-```yaml
-datamodule:
-  dataset:
-    root_path: ./output/00_raw/
-```
-also you can change the intermediate and cache (feature) paths at:
-```yaml
-datamodule:
-  intermediate:
-    root_path: ./output/01_intermediate/
-  caching:
-    root_path: ./output/02_features/
 ```
 
 ## Development
@@ -184,8 +184,10 @@ datamodule:
 
 ### Model Training
 
-The model training process is managed in the `model_base.py` class.
-You can customize the model architecture in `model.py` and, optionally, the training loop
+The model training process is managed in `model_base.py` by the `ModelBase` class.
+You can customize the model architecture in `model_tiny_ml.py` and overwrite any function you wish to change.
+See also how the training is done in `biodcase2026_tiny_ml.py`
+You can also simply create a new model file, but make sure that your model class inherits the `ModelBase`.
 
 ### ESP32-S3 Deployment
 
@@ -204,7 +206,6 @@ The [ESP32-S3-Korvo-2](https://docs.espressif.com/projects/esp-adf/en/latest/des
 - Built-in microphone array
 - Audio codec for high-quality audio processing
 - Wi-Fi and Bluetooth connectivity
-- USB-C connection for programming and debugging
 - [Software Support](https://components.espressif.com/components/espressif/esp32_s3_korvo_2/versions/4.1.2/readme)
 
 and can be bought for instance [here](https://www.digikey.de/de/products/detail/espressif-systems/ESP32-S3-KORVO-2/15822448).
