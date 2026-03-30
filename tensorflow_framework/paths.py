@@ -27,11 +27,11 @@ KERAS_MODEL_PATH = MODELS_DIR / 'model.keras'
 TFLITE_MODEL_PATH = MODELS_DIR / 'model.tflite'
 REFERENCE_DATASET_PATH = MODELS_DIR / "reference_dataset"
 
-REPORTING_DIR = OUT_DIR / '04_reporting'
+REPORTING_DIR = OUT_DIR / '04_reports'
 TENSORBOARD_LOGS_PATH = REPORTING_DIR / "tensorboard"
 CM_FIG_PATH = REPORTING_DIR / "cm.png"
 
-GEN_CODE_DIR = OUT_DIR / '05_generated_code'
+GEN_CODE_DIR = OUT_DIR / '05_generated_embedded_code'
 
 EVAL_ZIP_PATH = RAW_OUT_DIR / "Evaluation Set.zip"
 EVAL_CLIPS_DIR = RAW_OUT_DIR / "eval_clips"
@@ -40,4 +40,4 @@ EVAL_CLIPS_DIR = RAW_OUT_DIR / "eval_clips"
 TEMPLATE_DIR = Path(__file__).parent.parent / "biodcase_tiny/embedded/firmware"
 
 # create directories
-[p.mkdir() for p in [RAW_OUT_DIR, PREPROC_DIR, FEATURES_DIR, MODELS_DIR, REPORTING_DIR, GEN_CODE_DIR] if not p.exists()]
+[p.mkdir() for p in [OUT_DIR, RAW_OUT_DIR, PREPROC_DIR, FEATURES_DIR, MODELS_DIR, REPORTING_DIR, GEN_CODE_DIR] if not p.exists()]

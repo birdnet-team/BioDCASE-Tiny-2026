@@ -54,7 +54,7 @@ class ModelBase(torch.nn.Module):
     # default config
     cfg_default = {
       'model_name': self.__class__.__name__,
-      'save_path': './output/03_model',
+      'save_path': './output/03_models',
       'input_shape': [32],
       'num_classes': 11,
       'device': {'use_cpu': False, 'device_name': 'cuda:0'},
@@ -352,7 +352,7 @@ if __name__ == '__main__':
   data = (x, y)
 
   # model
-  model = ModelBase(save_path='./output/03_model', input_shape=x.shape[1:], num_classes=num_classes, verbose=True, device={'use_cpu': True})
+  model = ModelBase(save_path='./output/03_models', input_shape=x.shape[1:], num_classes=num_classes, verbose=True, device={'use_cpu': True})
   model.info()
 
   # to train mode

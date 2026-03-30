@@ -4,19 +4,29 @@ from pathlib import Path
 from datetime import datetime
 
 # Model location config
-MODEL_DIRS  = [Path("./output/03_model"), Path("./output/03_models")]
-MODEL_NAMES = ["model.tflite", "ModelTinyMl.tflite"]
-OUTPUT_DIRS = [Path("./output/04_reports"), Path("./output/04_reporting"), Path("./reports")]
+MODEL_DIRS  = [Path("./output/03_models")]
+TFLITE_MODEL_EXT = '.tflite'
+OUTPUT_DIRS = [Path("./output/04_reports"), Path("./reports")]
 
 
 def _find_tflite() -> Path | None:
     """Return the first matching .tflite file across all known dirs and names."""
     for folder in MODEL_DIRS:
-        for name in MODEL_NAMES:
-            candidate = folder / name
-            if candidate.exists():
-                return candidate
+
+        # candidate files 
+        candidate_model_files = sorted(list(folder.glob('*' + TFLITE_MODEL_EXT)))
+
+        # nothing found
+        if not len(candidate_model_files): continue
+
+        # more than one file
+        #if len(candidate_model_files) != 1: print("***More than one .tflite file, take first")
+
+        # just take first model file
+        return Path(candidate_model_files[0])
+
     return None
+
 
 def _find_output_dir() -> Path | None:
     """Return the first existing output directory across all known options."""
@@ -31,7 +41,7 @@ def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict
     Parse ESP32 serial monitor output and write a YAML report.
 
     Extracts:
-      - model size (bytes) from .tflite file found via MODEL_DIRS / MODEL_NAMES
+      - model size (bytes) from .tflite file found via MODEL_DIRS / *.TFLITE_MODEL_EXT
       - setup time (µs)         - block 1: GetFeatureConfig, AllocateTensors, etc.
       - preprocessing time (µs) - block 2: FFT, Mel filterbank, etc.
       - inference time (µs)     - block 3: CONV, DEPTHWISE_CONV, FULLY_CONNECTED, etc.
@@ -67,7 +77,7 @@ def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict
     if tflite:
         result["model_size_bytes"] = tflite.stat().st_size
     else:
-        print(f"[esp_monitor_parser] Warning: no .tflite found in {MODEL_DIRS} with names {MODEL_NAMES}")
+        print(f"[esp_monitor_parser] Warning: no {TFLITE_MODEL_EXT} model found in {MODEL_DIRS}")
 
     # The log contains three CSV timing tables:
     #   1st = model setup/init  (GetFeatureConfig, AllocateTensors, ...)

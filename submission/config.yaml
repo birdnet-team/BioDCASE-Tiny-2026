@@ -47,6 +47,7 @@ inference_handler:
     args: []
     kwargs: {}
 
+
 # inference handler - pytorch
 inference_handler_pytorch:
 
