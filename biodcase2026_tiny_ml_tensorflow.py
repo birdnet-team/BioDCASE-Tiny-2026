@@ -3,8 +3,6 @@
 
 import yaml
 from pipeline_tensorflow.config import load_config
-from pipeline_tensorflow.data_preprocessing import run_data_preprocessing
-from pipeline_tensorflow.feature_extraction import run_feature_extraction
 from pipeline_tensorflow.model_training import run_model_training
 from pipeline_tensorflow.paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, TFLITE_MODEL_PATH, GEN_CODE_DIR
 
