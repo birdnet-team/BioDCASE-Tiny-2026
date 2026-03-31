@@ -1,13 +1,13 @@
 # --
 # biodcase - main pipeline
 
-from config import load_config
-from data_preprocessing import run_data_preprocessing
-from feature_extraction import run_feature_extraction
-from model_training import run_model_training
-from embedded_code_generation import run_embedded_code_generation
-from deploy_generated_code import run_deploy_generated_code
-from paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, TFLITE_MODEL_PATH, GEN_CODE_DIR
+from pipeline_tensorflow.config import load_config
+from pipeline_tensorflow.data_preprocessing import run_data_preprocessing
+from pipeline_tensorflow.feature_extraction import run_feature_extraction
+from pipeline_tensorflow.model_training import run_model_training
+from pipeline_tensorflow.embedded_code_generation import run_embedded_code_generation
+from pipeline_tensorflow.deploy_generated_code import run_deploy_generated_code
+from pipeline_tensorflow.paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, TFLITE_MODEL_PATH, GEN_CODE_DIR
 
 
 if __name__ == '__main__':

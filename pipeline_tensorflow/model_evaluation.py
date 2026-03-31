@@ -42,11 +42,11 @@ import tensorflow as tf
 import keras
 from tensorflow.python.keras.utils.np_utils import to_categorical
 
-from config import load_config
+from pipeline_tensorflow.config import load_config
 from data_preprocessing import run_data_preprocessing
 #from embedded_code_generation import create_target, generate_and_flash
 from feature_extraction import run_feature_extraction
-from paths import CLIPS_DIR, EVAL_CLIPS_DIR, EVAL_ZIP_PATH, GEN_CODE_DIR, KERAS_MODEL_PATH
+from pipeline_tensorflow.paths import CLIPS_DIR, EVAL_CLIPS_DIR, EVAL_ZIP_PATH, GEN_CODE_DIR, KERAS_MODEL_PATH
 
 logger = logging.getLogger("biodcase_tiny")
 logger.setLevel(logging.INFO)

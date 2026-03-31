@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, field_validator, Field
 
-from paths import PIPELINE_CONFIG_FILE
+from pipeline_tensorflow.paths import PIPELINE_CONFIG_FILE
 
 
 class DataPreprocessing(BaseModel):

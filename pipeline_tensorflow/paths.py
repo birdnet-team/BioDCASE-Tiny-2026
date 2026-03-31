@@ -10,7 +10,7 @@ OUT_DIR = Path(__file__).parent / 'output'
 RAW_OUT_DIR = OUT_DIR / "00_raw"
 
 # change this to your dataset path
-CLIPS_DIR = Path("/world/dekutree/datasets/biodcase2026_tiny_ml/raw/")
+CLIPS_DIR = Path("../2026/Data/BioDCASE_2026_Task_3_TinyML_Dataset_V1")
 #CLIPS_DIR = RAW_OUT_DIR / "clips"
 
 PREPROC_DIR = OUT_DIR / "01_intermediate"

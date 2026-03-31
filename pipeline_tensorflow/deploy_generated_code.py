@@ -4,8 +4,8 @@
 import sys
 
 from pathlib import Path
-from config import Config, load_config
-from paths import GEN_CODE_DIR
+from pipeline_tensorflow.config import Config, load_config
+from pipeline_tensorflow.paths import GEN_CODE_DIR
 
 # required package paths
 [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]

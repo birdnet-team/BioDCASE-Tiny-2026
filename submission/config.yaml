@@ -86,7 +86,7 @@ inference_handler_pytorch:
   # model
   model:
     module: model_tiny_ml
-    attr: ModelTinyMl
+    attr: Baseline
     args: []
     kwargs: {}
 

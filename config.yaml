@@ -26,7 +26,7 @@ datamodule:
 
   # dataset
   dataset:
-    root_path: '/path/to/the/downloaded/dataset'
+    root_path: '../2026/Data/BioDCASE_2026_Task_3_TinyML_Dataset_V1'
     file_ext: '.wav'
 
   # intermediate
@@ -59,7 +59,7 @@ datamodule:
   load_set_on_init: Null
 
   # other flags
-  add_channel_dimension: True
+  add_channel_dimension: False
   redo_all: False
   redo_intermediate: False
   redo_cache: False
@@ -89,7 +89,7 @@ model:
 
 # model training
 model_training:
-  num_epochs: 20
+  num_epochs: 1
 
 
 # reports
@@ -113,4 +113,4 @@ generate_embedded_code:
   serial_device: '/dev/ttyUSB0'
 
   # quantize
-  quantize: False
+  quantize: True

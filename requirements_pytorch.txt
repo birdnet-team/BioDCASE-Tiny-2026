@@ -1,5 +1,5 @@
 # --
-# requirements
+# requirements for the pytorch framework
 
 # choose a python version <= 3.13, because tensorflow (problem with litert-torch) is not yet supported in pip in later python versions.
 
@@ -17,3 +17,5 @@ soundfile
 torch
 torchinfo
 tqdm
+torchsummary
+ai-edge-quantizer-nightly

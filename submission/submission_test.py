@@ -13,7 +13,7 @@ from inference_handler import InferenceHandler
 [sys.path.append(p) for p in[str(Path(__file__).parent.parent)] if p not in sys.path]
 
 from plots import plot_confusion_matrix
-from biodcase2026_tiny_ml import run_deploy_embedded_compiled_code
+from biodcase2026_tiny_ml_pytorch import run_deploy_embedded_compiled_code
 
 
 def run_inference(cfg, inference_scores_file):

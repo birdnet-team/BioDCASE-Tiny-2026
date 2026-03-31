@@ -18,8 +18,8 @@ from functools import partial
 from numpy.lib.stride_tricks import sliding_window_view
 from tqdm.dask import TqdmCallback
 
-from config import load_config, Config
-from paths import PREPROC_PRQ_PATH, FEATURES_PRQ_PATH, FEATURES_SAMPLE_PLOT_DIR, FEATURES_SHAPE_JSON_PATH
+from pipeline_tensorflow.config import load_config, Config
+from pipeline_tensorflow.paths import PREPROC_PRQ_PATH, FEATURES_PRQ_PATH, FEATURES_SAMPLE_PLOT_DIR, FEATURES_SHAPE_JSON_PATH
 
 # required package paths
 [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]

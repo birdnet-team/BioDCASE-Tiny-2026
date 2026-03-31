@@ -14,8 +14,8 @@ import pyarrow
 import soundfile
 
 from tqdm.dask import TqdmCallback
-from config import load_config, Config
-from paths import CLIPS_DIR, PREPROC_PRQ_PATH
+from pipeline_tensorflow.config import load_config, Config
+from pipeline_tensorflow.paths import CLIPS_DIR, PREPROC_PRQ_PATH
 
 _PREPROC_DASK_BATCH_SIZE = 1000
 

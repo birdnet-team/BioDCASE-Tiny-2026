@@ -15,9 +15,9 @@ from keras.src.utils import to_categorical
 from sklearn.metrics import ConfusionMatrixDisplay
 from pathlib import Path
 
-from config import Config, load_config
-from paths import FEATURES_PRQ_PATH, KERAS_MODEL_PATH, FEATURES_SHAPE_JSON_PATH, REFERENCE_DATASET_PATH, CM_FIG_PATH
-from model import create_model, train_model
+from pipeline_tensorflow.config import Config, load_config
+from pipeline_tensorflow.paths import FEATURES_PRQ_PATH, KERAS_MODEL_PATH, FEATURES_SHAPE_JSON_PATH, REFERENCE_DATASET_PATH, CM_FIG_PATH
+from pipeline_tensorflow.model import create_model, train_model
 
 # required package paths
 [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]

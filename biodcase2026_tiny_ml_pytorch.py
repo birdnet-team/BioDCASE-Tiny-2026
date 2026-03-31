@@ -1,0 +1,52 @@
+# --
+# biodcase 2026 - tiny ml (task 3)
+
+import yaml
+from pathlib import Path
+
+from pipeline_pytorch.model_training import pytorch_model_taining
+from embedded_code_generation import run_compile_embedded_src_code, run_create_target_embedded_src_code, run_deploy_embedded_compiled_code
+from model_evaluation import model_evaluation
+from model_quantization import model_quantization
+
+if __name__ == '__main__':
+  """
+  tiny ml starts here
+  """
+
+  # yaml config file
+  cfg = yaml.safe_load(open('./config.yaml'))
+
+  # info
+  print("Hello Tiny ML 2026, version: {}".format(cfg['version']))
+
+  # run model training and test in pytorch
+  pytorch_model_taining(cfg)
+
+  submission_cfg=yaml.safe_load(open('./submission/config.yaml'))
+  model_name=submission_cfg['inference_handler_pytorch']['model']['attr']
+  tflite_path = Path(cfg['model']['save_path']) / f"{model_name}.tflite"
+
+  print(tflite_path)
+
+  # quantize
+  if cfg['generate_embedded_code']['quantize']:
+    print("Model evaluation before quantization: ")
+    model_evaluation(cfg['datamodule'], tflite_path)
+
+    print("Model quantization (model will be overwritten!) ")
+    model_quantization(cfg['datamodule'], tflite_path, tflite_path)
+
+    print("Model evaluation after quantization: ")
+  
+  # evaluation .tflite model  
+  model_evaluation(cfg['datamodule'], tflite_path)
+
+  # run generate embedded src code
+  run_create_target_embedded_src_code(cfg, tflite_path)
+
+  # compile
+  run_compile_embedded_src_code(cfg)
+
+  # deploy
+  run_deploy_embedded_compiled_code(cfg)
