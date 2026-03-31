@@ -15,19 +15,12 @@
 
 **BioDCASE-Tiny 2026 competition (Task 3)** - A machine learning challenge to bird sound recognition on tiny hardware, also visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3) for more information.
 
-## Todos:
-- **@Christian:** create a submission test system (inference model + trained weights + .tflite version of the model) until 26.03.2026
-- **@Tom:** read the terminal output from the profiler (esp idf monitoring) and fetch the relevant information for result comparison until 26.03.2026
-- **@Yasmine:** create an equivalent of the baseline model from tensorflow (`./tensorflow_framework/model.py`) to pytorch model until 26.03.2026
-- **@Yasmine:** create a quantized version of the baseline model, check its performance to the original one and use it as new baseline until 26.03.2026
-- **@All:** run the baseline model and compute scores (same scores as last year's challenge)
-- **@All:** update the documentation
-- **@All:** next meetup 26.03.2026, 16:00
 
 ## Background
 
 BioDCASE-Tiny is a competition for developing efficient machine learning models for bird audio recognition that can run on resource-constrained embedded devices. The project uses the ESP32-S3-Korvo-2 development board, which offers audio processing capabilities in a small form factor suitable for field deployment.
 This year we changed the main framework to work on pytorch and transfered the updated tensorflow baseline to the `tensorflow_framework` folder.
+
 
 ## Table of Contents
 - [Dataset](#dataset)
@@ -41,6 +34,7 @@ This year we changed the main framework to work on pytorch and transfered the up
 - [Citation](#citation)
 - [Funding](#funding)
 - [Partners](#partners)
+
 
 ## Dataset
 
@@ -74,7 +68,12 @@ Download the dataset from: [BioDCASE-Tiny 2026 Dataset]()
 ### Prerequisites
 
 1. Python >=3.11 and <=3.13 with pip and venv
-2. ESP32-S3-Korvo-2 development board and USB cable
+2. [Docker](https://www.docker.com/get-started/) (runs ESP-IDF in a container) or locally installed [ESP-IDF](https://github.com/espressif/esp-idf)  
+3. (optional) ESP32-S3-Korvo-2 development board and two USB cables (power and serial connection)
+
+> [!IMPORTANT]
+> You can also participate in the challenge if you do not want to buy a Korvo-2 dev board, but consider that you will not be able to check if your model is actually deployable on the korvo system.
+> Note, that we will not accept models that do not run on our system.
 
 ### Installation Steps
 
@@ -100,16 +99,42 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+5. Install Docker on your system ([link](https://www.docker.com/get-started/)). Afterwards you have to activate the docker deamon and add it to your user group. On linux it looks something like:
+```bash
+systemctl status docker.socket
+systemctl enable docker.socket
+sudo gpasswd -a <your_username> docker
+```
+then run a test with:
+```bash
+docker run hello-world
+```
+
+6. (alternatively) install the [ESP-IDF](https://github.com/espressif/esp-idf) framework on your local pc and compile the code by hand.
+
 ### Configuration
 
-1. Set your serial device port in the `config.yaml`
+1. Make sure you add some rights to your usb device to connect to the korvo board. This depends a bit on the system, on linux, you have to add udev rules in `/etc/udev/rules.d/`, e.g. add a file  there `/etc/udev/rules.d/10-custom-usb.rules` with content:
+```
+# ubuntu vs. arch
+# GROUP="dialout" vs. GROUP="uucp"
+# rule for esp32 (devkit-c or korvo)
+KERNEL=="ttyUSB0", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", GROUP="uucp", MODE="0666"
+```
+and add to your group ("uucp" for arch, "dialout" for ubuntu), then reload and restart your pc:
+```
+sudo gpasswd -a <your_username> uucp
+sudo udevadm control --reload-rules
+```
+
+2. Set your serial device port in the `config.yaml` for linux it is usually `/dev/ttyUSB0`
 
 ```yaml
 generate_embedded_code:
   serial_device: <YOUR_DEVICE> 
 ```
 
-2. Move the downloaded dataset to any location, for instance, `./output/00_raw/` and edit `config.yaml` file at following location:
+3. Move the downloaded dataset to any location on your pc, for instance, `./output/00_raw/` and edit `config.yaml` file at following location:
 ```yaml
 datamodule:
   dataset:
@@ -145,8 +170,8 @@ sudo chmod a+rw $SERIAL_PORT
 
 ## Development
 
-- Modify `config.yaml`
-- Modify `model_tiny_ml.py` or create your own model that is based on the model_base class implemented
+- Modify `config.yaml` to change feature extraction or model parameters
+- Modify `model_tiny_ml.py` or create your own model that is based on the `ModelBase` class implemented
 
 > [!IMPORTANT]
 > Writing custom features rather than using what is implemented here, requires implementing a numerically equivalent version on the embedded target too!
@@ -169,6 +194,16 @@ Data Preprocessing and feature extraction can also be run separately to visualiz
 python datamodule_tiny_ml.py
 ```
 
+Compilation of the created src code (only works if model is trained and src is created by running `biodcase2026_tiny_ml.py` first):
+```bash
+python compile_embedded_src_code.py
+```
+
+Deployment of compiled code on the actual device (only works if code was compiled before):
+```bash
+python deploy_embedded_compiled_code.py
+```
+
 ### Data Processing and Feature Extraction
 
 The data processing pipeline follows these steps:
@@ -187,7 +222,7 @@ datamodule:
 The model training process is managed in `model_base.py` by the `ModelBase` class.
 You can customize the model architecture in `model_tiny_ml.py` and overwrite any function you wish to change.
 See also how the training is done in `biodcase2026_tiny_ml.py`
-You can also simply create a new model file, but make sure that your model class inherits the `ModelBase`.
+You can also simply create a new model file, but make sure that your model class inherits `ModelBase`.
 
 ### ESP32-S3 Deployment
 
@@ -199,7 +234,6 @@ To deploy your model to the ESP32-S3-Korvo-2 board, you'll use the built-in depl
 4. Compiles the firmware using Docker-based ESP-IDF toolchain
 5. Flashes the compiled firmware to your connected ESP32-S3-Korvo-2 board
 
-## ESP32-S3-Korvo-2 Development Board
 
 The [ESP32-S3-Korvo-2](https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/dev-boards/user-guide-esp32-s3-korvo-2.html) board features:
 - ESP32-S3 dual-core processor
@@ -217,9 +251,7 @@ and can be bought for instance [here](https://www.digikey.de/de/products/detail/
   <br><br>
 </div>
 
-## Code Structure
-
-### Key Entry Points
+### Code Structure
 
 - `biodcase2026_tiny_ml.py` - Main execution pipeline
 - `datamodule_tiny_ml.py` - Datamodule for preprocessing, feature extraction, and data loading
@@ -229,14 +261,8 @@ and can be bought for instance [here](https://www.digikey.de/de/products/detail/
 - `biodcase_tiny/embedded/esp_toolchain.py` - ESP toolchain and for docker IDF
 - `biodcase_tiny/embedded/firmware/main` - Firmware source code that will be copied and modified for the ESP target
 
-### Benchmarking
 
-The codebase includes performance benchmarking tools that measure:
-- Feature extraction time
-- Model inference time
-- Memory usage on the target device
-
-## Development Tips
+### Development Tips
 
 1. **Feature Extraction Parameters**: Carefully tune the feature extraction parameters in `config.yaml`.
 
@@ -263,9 +289,18 @@ The BioDCASE-Tiny competition evaluates models based on multiple criteria:
 ### Ranking
 Participants will be ranked separately for each one of the evaluation criteria.
 
+
+## Limitations
+This framework is still not perfect as we do not use real microphone data from the korvo-2 and merely run a profiler to check upon the model and feature extraction.
+Therefore, we are always looking for interested collaborators to improve upon this project and create an even better challenge starting point for BioDCASE.
+
+If you find issues in code or have problems in getting started, please create a github issue.
+
+
 ## License
 
 This project is licensed under the Apache License 2.0 - see the license headers in individual files for details.
+
 
 ## Citation
 
@@ -299,11 +334,14 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
 }
 ```
 
+
 ## Funding
 
-Our work in the K. Lisa Yang Center for Conservation Bioacoustics is made possible by the generosity of K. Lisa Yang to advance innovative conservation technologies to inspire and inform the conservation of wildlife and habitats.
+<!-- Our work in the K. Lisa Yang Center for Conservation Bioacoustics is made possible by the generosity of K. Lisa Yang to advance innovative conservation technologies to inspire and inform the conservation of wildlife and habitats.
 
-The development of BirdNET is supported by the German Federal Ministry of Research, Technology and Space (FKZ 01|S22072), the German Federal Ministry for the Environment, Climate Action, Nature Conservation and Nuclear Safety (FKZ 67KI31040E), the German Federal Ministry of Economic Affairs and Energy (FKZ 16KN095550), the Deutsche Bundesstiftung Umwelt (project 39263/01) and the European Social Fund.
+The development of BirdNET is supported by the German Federal Ministry of Research, Technology and Space (FKZ 01|S22072), the German Federal Ministry for the Environment, Climate Action, Nature Conservation and Nuclear Safety (FKZ 67KI31040E), the German Federal Ministry of Economic Affairs and Energy (FKZ 16KN095550), the Deutsche Bundesstiftung Umwelt (project 39263/01) and the European Social Fund. -->
+t.b.d
+
 
 ## Partners
 

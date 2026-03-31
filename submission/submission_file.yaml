@@ -1,0 +1,115 @@
+# --
+# submission information
+
+# submision
+submission:
+  # Submission label
+  # Label is used to index submissions, to avoid overlapping codes among submissions
+  # use the following way to form your label:
+  # [Last name of corresponding author]_[Abbreviation of institute of the corresponding author]_task[task number]_[index number of your submission (1-4)]
+  label: xxx
+
+  # Submission name
+  # This name will be used in the results tables when space permits
+  name: xxx
+
+  # Submission name abbreviated
+  # This abbreviated name will be used in the results table when space is tight, maximum 10 characters
+  abbreviation: xxx
+
+  # Submission authors in order, mark one of the authors as corresponding author.
+  authors:
+    # First author
+    - lastname: xxx
+      firstname: xxx
+      email: xxx
+      corresponding: true
+
+      # Affiliation information for the author
+      affiliation:
+        abbreviation: xxx
+        institute: xxx
+        department: xxx
+        location: xxx
+
+
+# System information
+system:
+  # Multi-channel alignment system description, meta data provided here will be used to do
+  # meta analysis of the submitted system. Use general level tags, if possible use the tags provided in comments.
+  # If information field is not applicable to the system, use "!!null".
+  description:
+
+    # Acoustic representation
+    acoustic_features: log mel spectrogram
+
+    # Data augmentation methods
+    data_augmentation: !!null
+
+    # Embeddings
+    embeddings: !!null
+
+    # Machine learning
+    # What kind of loss function was used during model training?
+    training_objective: cross entropy
+
+    # Model compression
+    # What kind of model compression techniques were used, if any?
+    model_compression: None
+
+    # External data usage method
+    external_data_usage: !!null
+
+  # URL to the source code of the system [optional, highly recommended]
+  source_code: !!null
+
+  # List of external datasets used in the submission.
+  external_datasets:
+    # Dataset name
+    - name: !!null
+      # Dataset access url
+      url: !!null
+      # Total audio length in minutes
+      total_audio_length: !!null            # minutes
+
+# System results 
+results:
+
+  # Classification Performance
+  average_precision: xxx
+  
+  # Resource Efficiency on the ESP32-S3-Korvo-2 development board
+  resource_efficiency:
+    model_size: xxx # in (KB)
+    inference_time: xxx # in (ms)
+
+    # could not find this:
+    peak_memory: !!null  # in (KB)
+
+
+# --
+# todos:
+
+coding_agents_ai_used: yes or no, (openclaw)
+
+backbone:
+
+model_arch:
+
+model_training:
+
+audio_frontend:
+
+loss_function:
+
+pruning:
+
+knowledge-distillation:
+
+# pytorch, tensorflow
+machine-learning_framework:
+
+# add to repo
+collaborate.md
+
+acknowledgement:

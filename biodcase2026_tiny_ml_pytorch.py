@@ -34,6 +34,7 @@ if __name__ == '__main__':
     print("Model evaluation before quantization: ")
     model_evaluation(cfg['datamodule'], tflite_path)
 
+    # TODO fix overwritten file (add quantization path)
     print("Model quantization (model will be overwritten!) ")
     model_quantization(cfg['datamodule'], tflite_path, tflite_path)
 

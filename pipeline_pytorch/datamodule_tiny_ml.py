@@ -121,7 +121,16 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
         'mel_high_hz': 7500,
         'mel_post_scaling_bits': 6,
         },
-      'normalize_features': True,
+      'feature_handler_add_kwargs': {
+        'target_sample_rate': 24000,
+        'transpose_features_extracted': True,
+        'normalize_features': True,
+        'to_float': True,
+        'to_torch': True,
+        'add_channel_dimension': True,
+        'add_batch_dimension': False,
+        'channel_dimension_at_end': False,
+        },
       'dataset': {
         'root_path': '/path/to/the/downloaded/dataset',
         'file_ext': '.wav',
@@ -154,7 +163,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       'load_set_on_init': None,
 
       # other flags
-      'add_channel_dimension': True,
       'redo_all': False,
       'redo_intermediate': False,
       'redo_cache': False,
@@ -466,7 +474,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     self.cache_info.update({'x_len': None, 'fs': None, 'feature_size_origin': None})
 
     # feature handler init
-    self.feature_handler = FeatureHandler(**self.get_feature_handler_config())
+    self.feature_handler = FeatureHandler(**{**self.cfg['feature_extraction'], **self.cfg['feature_handler_add_kwargs']})
 
 
   def at_caching_add_something_after_file_processing(self):
@@ -521,7 +529,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # target feature shape
     target_feature_shape = tuple(self.cache_info['feature_size_origin'])
-    if self.cfg['add_channel_dimension']: target_feature_shape = (1,) + target_feature_shape
 
     # add feature shape at load
     self.load_info.update({'feature_shape_at_load': target_feature_shape})
@@ -539,9 +546,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # reshape to original shape
     x = x.reshape(self.cache_info['feature_size_origin'])
-
-    # add channel dimension (e.g. useful for cnn models)
-    if self.cfg['add_channel_dimension']: x = x[np.newaxis, :]
 
     return x
 
@@ -568,7 +572,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     """
     feature shape at load
     """
-    assert self.load_info.get('feature_shape_at_load') is not None, "Load data before asking about feature shape at load."
+    assert self.load_info.get('feature_shape_at_load') is not None, "Please load data before!"
     return self.load_info['feature_shape_at_load']
 
 
@@ -591,13 +595,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     get spec sampling rate (fs)
     """
     return self.cfg['target_sample_rate'] / self.cfg['feature_extraction']['window_stride']
-
-
-  def get_feature_handler_config(self):
-    """
-    get kwargs for feature handler from config
-    """
-    return {'target_sample_rate': self.cfg['target_sample_rate'], 'normalize_features': self.cfg['normalize_features'], **self.cfg['feature_extraction']}
 
 
   def get_label_dict(self): return self.label_dict

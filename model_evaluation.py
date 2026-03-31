@@ -79,7 +79,7 @@ def loadCalibrationDataset(cfg, key="train", cache_id=None):
       x = data['x'].reshape(cache_info['feature_size_origin'])
       labels.append(data['y'])
 
-      if cfg['add_channel_dimension']: x = x[np.newaxis, :]
+      if not cfg['feature_handler_add_kwargs']['add_channel_dimension']: x = x[np.newaxis, :]
 
       calibration_samples.append(x)
       data.close()
