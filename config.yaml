@@ -21,8 +21,16 @@ datamodule:
     mel_high_hz: 7500
     mel_post_scaling_bits: 6
 
-  # normalize
-  normalize_features: True
+  # feature handler gets this additionally and feature extraction above
+  feature_handler_add_kwargs:
+    target_sample_rate: 24000
+    transpose_features_extracted: True
+    normalize_features: True
+    to_float: True
+    to_torch: True
+    add_channel_dimension: True
+    add_batch_dimension: False
+    channel_dimension_at_end: False
 
   # dataset
   dataset:
@@ -59,7 +67,6 @@ datamodule:
   load_set_on_init: Null
 
   # other flags
-  add_channel_dimension: True
   redo_all: False
   redo_intermediate: False
   redo_cache: False

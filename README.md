@@ -15,19 +15,12 @@
 
 **BioDCASE-Tiny 2026 competition (Task 3)** - A machine learning challenge to bird sound recognition on tiny hardware, also visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3) for more information.
 
-## Todos:
-- **@Christian:** create a submission test system (inference model + trained weights + .tflite version of the model) until 26.03.2026
-- **@Tom:** read the terminal output from the profiler (esp idf monitoring) and fetch the relevant information for result comparison until 26.03.2026
-- **@Yasmine:** create an equivalent of the baseline model from tensorflow (`./tensorflow_framework/model.py`) to pytorch model until 26.03.2026
-- **@Yasmine:** create a quantized version of the baseline model, check its performance to the original one and use it as new baseline until 26.03.2026
-- **@All:** run the baseline model and compute scores (same scores as last year's challenge)
-- **@All:** update the documentation
-- **@All:** next meetup 26.03.2026, 16:00
 
 ## Background
 
 BioDCASE-Tiny is a competition for developing efficient machine learning models for bird audio recognition that can run on resource-constrained embedded devices. The project uses the ESP32-S3-Korvo-2 development board, which offers audio processing capabilities in a small form factor suitable for field deployment.
 This year we changed the main framework to work on pytorch and transfered the updated tensorflow baseline to the `tensorflow_framework` folder.
+
 
 ## Table of Contents
 - [Dataset](#dataset)
@@ -41,6 +34,7 @@ This year we changed the main framework to work on pytorch and transfered the up
 - [Citation](#citation)
 - [Funding](#funding)
 - [Partners](#partners)
+
 
 ## Dataset
 
@@ -79,8 +73,7 @@ Download the dataset from: [BioDCASE-Tiny 2026 Dataset]()
 
 > [!IMPORTANT]
 > You can also participate in the challenge if you do not want to buy a Korvo-2 dev board, but consider that you will not be able to check if your model is actually deployable on the korvo system.
-> Note, that we will not accept models that do not run run on our system.
-
+> Note, that we will not accept models that do not run on our system.
 
 ### Installation Steps
 
@@ -241,7 +234,6 @@ To deploy your model to the ESP32-S3-Korvo-2 board, you'll use the built-in depl
 4. Compiles the firmware using Docker-based ESP-IDF toolchain
 5. Flashes the compiled firmware to your connected ESP32-S3-Korvo-2 board
 
-## ESP32-S3-Korvo-2 Development Board
 
 The [ESP32-S3-Korvo-2](https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/dev-boards/user-guide-esp32-s3-korvo-2.html) board features:
 - ESP32-S3 dual-core processor
@@ -259,9 +251,7 @@ and can be bought for instance [here](https://www.digikey.de/de/products/detail/
   <br><br>
 </div>
 
-## Code Structure
-
-### Key Entry Points
+### Code Structure
 
 - `biodcase2026_tiny_ml.py` - Main execution pipeline
 - `datamodule_tiny_ml.py` - Datamodule for preprocessing, feature extraction, and data loading
@@ -271,14 +261,8 @@ and can be bought for instance [here](https://www.digikey.de/de/products/detail/
 - `biodcase_tiny/embedded/esp_toolchain.py` - ESP toolchain and for docker IDF
 - `biodcase_tiny/embedded/firmware/main` - Firmware source code that will be copied and modified for the ESP target
 
-### Benchmarking
 
-The codebase includes performance benchmarking tools that measure:
-- Feature extraction time
-- Model inference time
-- Memory usage on the target device
-
-## Development Tips
+### Development Tips
 
 1. **Feature Extraction Parameters**: Carefully tune the feature extraction parameters in `config.yaml`.
 
@@ -305,18 +289,18 @@ The BioDCASE-Tiny competition evaluates models based on multiple criteria:
 ### Ranking
 Participants will be ranked separately for each one of the evaluation criteria.
 
+
 ## Limitations
 This framework is still not perfect as we do not use real microphone data from the korvo-2 and merely run a profiler to check upon the model and feature extraction.
 Therefore, we are always looking for interested collaborators to improve upon this project and create an even better challenge starting point for BioDCASE.
 
 If you find issues in code or have problems in getting started, please create a github issue.
 
-## Credits
-Christian Walter (Vetmeduni Vienna) - Adaption of code from previous challenge [BioDCASE 2025 Task 3](https://github.com/birdnet-team/BioDCASE-Tiny-2025), extension to pytorch, adaption on new dataset
 
 ## License
 
 This project is licensed under the Apache License 2.0 - see the license headers in individual files for details.
+
 
 ## Citation
 
@@ -350,11 +334,14 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
 }
 ```
 
+
 ## Funding
 
-Our work in the K. Lisa Yang Center for Conservation Bioacoustics is made possible by the generosity of K. Lisa Yang to advance innovative conservation technologies to inspire and inform the conservation of wildlife and habitats.
+<!-- Our work in the K. Lisa Yang Center for Conservation Bioacoustics is made possible by the generosity of K. Lisa Yang to advance innovative conservation technologies to inspire and inform the conservation of wildlife and habitats.
 
-The development of BirdNET is supported by the German Federal Ministry of Research, Technology and Space (FKZ 01|S22072), the German Federal Ministry for the Environment, Climate Action, Nature Conservation and Nuclear Safety (FKZ 67KI31040E), the German Federal Ministry of Economic Affairs and Energy (FKZ 16KN095550), the Deutsche Bundesstiftung Umwelt (project 39263/01) and the European Social Fund.
+The development of BirdNET is supported by the German Federal Ministry of Research, Technology and Space (FKZ 01|S22072), the German Federal Ministry for the Environment, Climate Action, Nature Conservation and Nuclear Safety (FKZ 67KI31040E), the German Federal Ministry of Economic Affairs and Energy (FKZ 16KN095550), the Deutsche Bundesstiftung Umwelt (project 39263/01) and the European Social Fund. -->
+t.b.d
+
 
 ## Partners
 
