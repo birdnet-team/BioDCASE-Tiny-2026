@@ -11,13 +11,14 @@ import json
 
 from keras import Model
 from keras.src.metrics import AUC
-from keras.src.utils import to_categorical
 from sklearn.metrics import ConfusionMatrixDisplay
 from pathlib import Path
 
 from pipeline_tensorflow.config import Config, load_config
-from pipeline_tensorflow.paths import FEATURES_PRQ_PATH, KERAS_MODEL_PATH, FEATURES_SHAPE_JSON_PATH, REFERENCE_DATASET_PATH, CM_FIG_PATH
+from pipeline_tensorflow.paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, CM_FIG_PATH, TFLITE_MODEL_PATH
 from pipeline_tensorflow.model import create_model, train_model
+
+from keras.src.utils import to_categorical
 
 # required package paths
 [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
@@ -32,43 +33,37 @@ def set_seeds(seed):
   tf.config.experimental.enable_op_determinism()
   keras.utils.set_random_seed(seed)
 
-
-def make_tf_datasets(data: pd.DataFrame, features_shape, label_dict, buffer_size=10000, seed=42, batch_size=32) -> tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
-  """
-  tensorflow dataset
-  """
-
-  # split dict
-  splits = {}
-
-  # go trough feature data
-  for split, group_data in data.groupby("split"):
-
-    # features: shape (tf backend): batches, rows, cols, channels
-    features = np.array(group_data["features"].to_list()).reshape((-1, *features_shape, 1))
-
-    # one hot labels
-    one_hot_labels = to_categorical(group_data["label"], num_classes=len(label_dict))
-
-    # dataset
-    dataset = tf.data.Dataset.from_tensor_slices((features, one_hot_labels))
-    dataset = dataset.shuffle(buffer_size=buffer_size, seed=seed).batch(batch_size)
-    splits[split] = dataset
-
-  reference_dataset = splits["train"].shuffle(10000).take(100)
-  return splits["train"], splits["validation"], reference_dataset
-
-
-def get_class_weight(train_ds):
+def get_class_weight(train_labels):
   """
   class weights
   """
-  train_labels = train_ds["label"]
-  l_counts: dict[str, int] = dict(train_labels.value_counts())
+  unique, counts = np.unique(train_labels.astype(int), return_counts=True)
+  l_counts: dict[str, int] = dict(zip(unique, counts))
   tot_counts = len(train_labels)
   class_weight = {k: tot_counts / v for k, v in l_counts.items()}
   return class_weight
 
+def tf_dataset(datamodule, features_shape, shuffle, buffer_size=None, seed=None, batch_size=None):
+    
+    # features: shape (tf backend): batches, rows, cols, channels
+    features = datamodule.features.reshape(-1, *features_shape)
+
+    # one hot labels
+    one_hot_labels = to_categorical(datamodule.targets)
+
+    # dataset
+    dataset = tf.data.Dataset.from_tensor_slices((features, one_hot_labels))
+    if shuffle:
+      dataset = dataset.shuffle(
+          buffer_size=buffer_size,
+          seed=seed,
+          reshuffle_each_iteration=True
+      )
+
+    dataset = dataset.batch(batch_size)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+
+    return dataset
 
 def predict_validation(model: Model, val_dataset: tf.data.Dataset):
   """
@@ -79,15 +74,26 @@ def predict_validation(model: Model, val_dataset: tf.data.Dataset):
   y_pred = model.predict(val_ds)
   return y_true, y_pred
 
+def convert_model(keras_path, tflite_path):
+  # Code taken from students
+  model = tf.keras.models.load_model(keras_path)
 
-def run_model_training(config: Config):
+  # Convert to TFLite with quantization
+  converter = tf.lite.TFLiteConverter.from_keras_model(model)
+  tflite_model = converter.convert()
+
+  # Save the converted model to a .tflite file
+  with open(tflite_path, 'wb') as f:
+      f.write(tflite_model)
+
+
+def run_model_training(config: Config, datamodule_train, datamodule_validation):
   """
   model training
   """
 
   # assertions
-  assert FEATURES_PRQ_PATH.is_dir(), "No feature extractions available in [{}], run feature extraction first!".format(FEATURES_PRQ_PATH)
-
+  
   # create path if not already created
   if not KERAS_MODEL_PATH.parent.is_dir(): KERAS_MODEL_PATH.parent.mkdir()
   if not CM_FIG_PATH.parent.is_dir(): CM_FIG_PATH.parent.mkdir()
@@ -96,30 +102,35 @@ def run_model_training(config: Config):
   set_seeds(config.model_training.seed)
 
   # feature shape
-  features_shape = json.load(open(FEATURES_SHAPE_JSON_PATH, 'r'))
+  c, w, h = datamodule_train.get_feature_shape_at_load()
+  features_shape = (w, h, c)
+  print(features_shape)
 
   # data
-  data = pd.read_parquet(FEATURES_PRQ_PATH)
+  train_ds = tf_dataset(datamodule_train, features_shape,
+    shuffle=True,
+    buffer_size=config.model_training.shuffle_buff_n, 
+    seed=config.model_training.seed,
+    batch_size=config.model_training.batch_size
+  )
+  valid_ds = tf_dataset(datamodule_validation, features_shape,
+    shuffle=True,
+    buffer_size=config.model_training.shuffle_buff_n, 
+    seed=config.model_training.seed,
+    batch_size=config.model_training.batch_size
+  )
+  reference_ds = train_ds.shuffle(10000).take(100)
 
   # load class dict
-  label_dict = yaml.safe_load(open(FEATURES_PRQ_PATH.parent / 'label_dict.yaml'))['label_dict']
-
-  # got flattened when writing parquet, restore shape now
-  data["features"] = data["features"].apply(lambda x: x.reshape(features_shape))
+  label_dict = datamodule_train.get_label_dict()
 
   # class weights
-  class_weight = get_class_weight(data[data["split"] == "train"])
-  train_ds, valid_ds, reference_ds = make_tf_datasets(
-    data,
-    features_shape,
-    label_dict,
-    config.model_training.shuffle_buff_n, 
-    config.model_training.seed,
-    config.model_training.batch_size
-  )
+  class_weight = get_class_weight(datamodule_train.targets)
+
 
   # model creation
-  model = create_model((*features_shape, 1), num_output_classes=len(label_dict))
+  model = create_model(features_shape, num_output_classes=len(label_dict))
+  model.summary()
 
   # model training
   model = train_model(model, train_ds, valid_ds, config, class_weight)
@@ -138,6 +149,7 @@ def run_model_training(config: Config):
   # plot confusion matrix
   plot_confusion_matrix(y_true, y_pred, labels=list(label_dict.keys()), plot_path=CM_FIG_PATH, show_plot_flag=False, apply_argmax=True)
 
+  convert_model(KERAS_MODEL_PATH, TFLITE_MODEL_PATH)
 
 if __name__ == "__main__":
   """

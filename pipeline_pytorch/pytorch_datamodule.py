@@ -34,7 +34,7 @@ class DataloaderPytorch(torch.utils.data.Dataset):
         "get_cache_info",
         "get_targets",
         "get_feature_shape_at_load",
-
+        
     }
 
   def __len__(self):

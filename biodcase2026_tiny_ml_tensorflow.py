@@ -1,34 +1,62 @@
 # --
 # biodcase - main pipeline
 
+import yaml
 from pipeline_tensorflow.config import load_config
 from pipeline_tensorflow.data_preprocessing import run_data_preprocessing
 from pipeline_tensorflow.feature_extraction import run_feature_extraction
 from pipeline_tensorflow.model_training import run_model_training
-from pipeline_tensorflow.embedded_code_generation import run_embedded_code_generation
-from pipeline_tensorflow.deploy_generated_code import run_deploy_generated_code
 from pipeline_tensorflow.paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, TFLITE_MODEL_PATH, GEN_CODE_DIR
 
+from datamodule import DatamoduleTinyMl
+from embedded_code_generation import run_compile_embedded_src_code, run_create_target_embedded_src_code, run_deploy_embedded_compiled_code
+from model_evaluation import model_evaluation
+from model_quantization import model_quantization
 
 if __name__ == '__main__':
   """
   biodcase - main pipeline
   """
 
+  cfg = yaml.safe_load(open('./config.yaml'))
+
   # config
   config = load_config()
 
-  # preprocessing
-  run_data_preprocessing(config)
+  # yaml config file
+  cfg = yaml.safe_load(open('./config.yaml'))
 
-  # feature extractions
-  run_feature_extraction(config)
+  # info
+  print("Hello Tiny ML 2026, version: {}".format(cfg['version']))
+
+  datamodule_train = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='train')
+  datamodule_validation = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='validation')
+  datamodule_test = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='test')
+  datamodule_train.info()
 
   # model training
-  run_model_training(config)
+  run_model_training(config, datamodule_train, datamodule_validation)
 
-  # embedded code generation
-  run_embedded_code_generation(config, model_path=KERAS_MODEL_PATH, reference_dataset_path=REFERENCE_DATASET_PATH, tflite_model_path=TFLITE_MODEL_PATH, gen_code_dir=GEN_CODE_DIR)
 
-  # deployment
-  run_deploy_generated_code(config)
+  # quantize
+  if cfg['generate_embedded_code']['quantize']:
+    print("Model evaluation before quantization: ")
+    model_evaluation(cfg['datamodule'], TFLITE_MODEL_PATH)
+
+    # TODO fix overwritten file (add quantization path)
+    print("Model quantization (model will be overwritten!) ")
+    model_quantization(cfg['datamodule'], TFLITE_MODEL_PATH, TFLITE_MODEL_PATH)
+
+    print("Model evaluation after quantization: ")
+  
+  # evaluation .tflite model  
+  model_evaluation(cfg['datamodule'], TFLITE_MODEL_PATH)
+
+  # run generate embedded src code
+  run_create_target_embedded_src_code(cfg, TFLITE_MODEL_PATH)
+
+  # compile
+  run_compile_embedded_src_code(cfg)
+
+  # deploy
+  run_deploy_embedded_compiled_code(cfg)

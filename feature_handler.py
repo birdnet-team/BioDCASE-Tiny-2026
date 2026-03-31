@@ -3,8 +3,6 @@
 
 import numpy as np
 import functools
-import torch
-
 from biodcase_tiny.feature_extraction.feature_extraction import process_window, make_constants
 
 

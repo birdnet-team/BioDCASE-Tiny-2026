@@ -52,7 +52,7 @@ def run_model(input_data, model_path):
 
   # run samples
   for sample in input_data:
-    sample = sample.reshape(1, *sample.shape)  # tflite still needs batch dim
+    sample = sample.reshape(input_details[0]['shape'])
     interpreter.set_tensor(input_details[0]['index'], sample)
     interpreter.invoke()
     y_pred = interpreter.get_tensor(output_details[0]['index'])

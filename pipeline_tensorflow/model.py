@@ -23,7 +23,7 @@ def create_model(input_shape, num_output_classes, n_filters_1=32, dropout=0.05) 
   x = layers.Conv2D(filters=n_filters_1*2, kernel_size=3, activation='relu')(x)
   x = layers.MaxPooling2D(pool_size=4)(x)
 
-  x = layers.Conv2D(filters=n_filters_1*2, kernel_size=3, activation='relu')(x)
+  x = layers.Conv2D(filters=n_filters_1*4, kernel_size=3, activation='relu')(x)
   x = layers.GlobalAveragePooling2D()(x)
 
   x = layers.Dropout(dropout, name="dropout1")(x)

@@ -1,16 +1,29 @@
+import re
 import yaml
 from datamodule import DatamoduleTinyMl
+
 from ai_edge_quantizer import quantizer, recipe
+
+from ai_edge_litert.interpreter import Interpreter
 from ai_edge_quantizer.utils import tfl_interpreter_utils
 
+def clean_input_layer_name(name: str) -> str:
+    name = name.split(":")[0]
+    name = re.sub(r"^serving_default_", "", name)
+    return name
+
 def model_quantization(cfg_datamodule, tfliteFP32path, tfliteINT8path):
+    interpreter = Interpreter(model_path=str(tfliteFP32path))
+
+    input_details = interpreter.get_input_details()
+
     datamodule_calibrate = DatamoduleTinyMl(cfg_datamodule, load_set_on_init='test')
 
     calibration_samples=[]
 
     for i, sample in enumerate(datamodule_calibrate.features):
       calibration_samples.append({
-            'args_0': sample
+            clean_input_layer_name(input_details[0]['name']): sample
         })
 
     calibration_data = {
