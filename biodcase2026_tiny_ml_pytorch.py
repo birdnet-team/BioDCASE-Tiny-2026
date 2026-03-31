@@ -4,6 +4,7 @@
 import yaml
 from pathlib import Path
 
+from datamodule import DatamoduleTinyMl
 from pipeline_pytorch.model_training import pytorch_model_taining
 from embedded_code_generation import run_compile_embedded_src_code, run_create_target_embedded_src_code, run_deploy_embedded_compiled_code
 from model_evaluation import model_evaluation
@@ -20,9 +21,16 @@ if __name__ == '__main__':
   # info
   print("Hello Tiny ML 2026, version: {}".format(cfg['version']))
 
-  # run model training and test in pytorch
-  pytorch_model_taining(cfg)
+  datamodule_train = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='train')
+  datamodule_validation = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='validation')
+  datamodule_test = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='test')
+  datamodule_train.info()
 
+  # run model training and test in pytorch
+  pytorch_model_taining(cfg, datamodule_train, datamodule_validation, datamodule_test)
+
+
+  # Quantization and evaluation
   submission_cfg=yaml.safe_load(open('./submission/config.yaml'))
   model_name=submission_cfg['inference_handler_pytorch']['model']['attr']
   tflite_path = Path(cfg['model']['save_path']) / f"{model_name}.tflite"

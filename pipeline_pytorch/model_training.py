@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from pathlib import Path
 from plots import plot_confusion_matrix
-from pipeline_pytorch.datamodule_tiny_ml import DatamoduleTinyMl
+from pipeline_pytorch.pytorch_datamodule import DataloaderPytorch
 from pipeline_pytorch.model_tiny_ml import Baseline
 
 def run_model_training(cfg, model, dataloader_train, dataloader_validation, label_dict):
@@ -100,16 +100,12 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
 
 
 
-def pytorch_model_taining(cfg):
-  datamodule_train = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='train')
-  datamodule_validation = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='validation')
-  datamodule_test = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='test')
-  datamodule_train.info()
-
+def pytorch_model_taining(cfg, datamodule_train, datamodule_validation, datamodule_test):
+  
   # dataloader
-  dataloader_train = torch.utils.data.DataLoader(datamodule_train, **cfg['dataloader_train_kwargs'])
-  dataloader_validation = torch.utils.data.DataLoader(datamodule_train, **cfg['dataloader_validation_and_test_kwargs'])
-  dataloader_test = torch.utils.data.DataLoader(datamodule_train, **cfg['dataloader_validation_and_test_kwargs'])
+  dataloader_train = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_train))
+  dataloader_validation = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_validation))
+  dataloader_test = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_test))
 
   # model
   model = Baseline(cfg['model'], input_shape=datamodule_train.get_feature_shape_at_load(), num_classes=len(datamodule_train.get_label_dict()))

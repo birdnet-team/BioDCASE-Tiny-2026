@@ -120,4 +120,4 @@ generate_embedded_code:
   serial_device: '/dev/ttyUSB0'
 
   # quantize
-  quantize: False
+  quantize: True

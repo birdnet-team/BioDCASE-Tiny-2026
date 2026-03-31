@@ -131,9 +131,6 @@ class FeatureHandler():
     # normalize [0, 1]
     if self.cfg['normalize_features']: x_t = (x_t - np.min(x_t)) / np.ptp(x_t)
 
-    # to torch
-    if self.cfg['to_torch']: x_t = torch.from_numpy(x_t)
-
     return x_t
 
 

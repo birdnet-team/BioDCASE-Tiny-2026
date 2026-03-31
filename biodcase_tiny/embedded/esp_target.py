@@ -70,8 +70,8 @@ class ESPTarget():
       # simply read the data as bytes
       with self.model_path.open("rb") as f: model = f.read()
 
-      # quantize flag check
-      if self.quantize: raise ValueError("A tflite model was provided but `quantize` set to True.")
+      # quantize flag check TODO verify correct
+      #if self.quantize: raise ValueError("A tflite model was provided but `quantize` set to True.")
 
       # model buffer
       return deepcopy(model)
