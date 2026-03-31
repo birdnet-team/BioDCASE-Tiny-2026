@@ -6,11 +6,13 @@ import sys
 import torch
 import numpy as np
 
+from pathlib import Path
+
 from datamodule_tiny_ml import DatamoduleTinyMl
 from model_tiny_ml import ModelTinyMl
 from plots import plot_confusion_matrix
-from pathlib import Path
-
+from compile_embedded_src_code import run_compile_embedded_src_code
+from deploy_embedded_compiled_code import run_deploy_embedded_compiled_code
 from biodcase_tiny.embedded.esp_target import ESPTarget
 from biodcase_tiny.embedded.esp_toolchain import ESPToolchain
 from biodcase_tiny.feature_extraction.feature_extraction import make_constants
@@ -143,40 +145,6 @@ def run_create_target_embedded_src_code(cfg, model_path):
 
   # write templates
   target.process_target_templates(src_path)
-
-
-def run_compile_embedded_src_code(cfg):
-
-  # info
-  print("\nCode Compilation...\n")
-
-  # source path
-  src_path = Path(cfg['generate_embedded_code']['gen_code_dir']) / cfg['generate_embedded_code']['gen_code_source_folder_name']
-
-  # assertions
-  assert src_path.is_dir(), "Generated code does not exist in {}, run code creation first!".format(src_path)
-
-  # toolchain: compile, flash, and monitor
-  toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])
-  #toolchain.set_target(src_path=src_path)
-  toolchain.compile(src_path=src_path)
-
-
-def run_deploy_embedded_compiled_code(cfg):
-
-  # info
-  print("\nDeploy code to microcontroller and monitor...")
-
-  # source path
-  src_path = Path(cfg['generate_embedded_code']['gen_code_dir']) / cfg['generate_embedded_code']['gen_code_source_folder_name']
-
-  # assertions
-  assert src_path.is_dir(), "Generated code does not exist in {}, run code creation first!".format(src_path)
-
-  # toolchain: flash, and monitor
-  toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])
-  toolchain.flash(src_path=src_path)
-  toolchain.monitor(src_path=src_path)
 
 
 if __name__ == '__main__':

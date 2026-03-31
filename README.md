@@ -74,7 +74,13 @@ Download the dataset from: [BioDCASE-Tiny 2026 Dataset]()
 ### Prerequisites
 
 1. Python >=3.11 and <=3.13 with pip and venv
-2. ESP32-S3-Korvo-2 development board and USB cable
+2. [Docker](https://www.docker.com/get-started/) (runs ESP-IDF in a container) or locally installed [ESP-IDF](https://github.com/espressif/esp-idf)  
+3. (optional) ESP32-S3-Korvo-2 development board and two USB cables (power and serial connection)
+
+> [!IMPORTANT]
+> You can also participate in the challenge if you do not want to buy a Korvo-2 dev board, but consider that you will not be able to check if your model is actually deployable on the korvo system.
+> Note, that we will not accept models that do not run run on our system.
+
 
 ### Installation Steps
 
@@ -100,16 +106,42 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+5. Install Docker on your system ([link](https://www.docker.com/get-started/)). Afterwards you have to activate the docker deamon and add it to your user group. On linux it looks something like:
+```bash
+systemctl status docker.socket
+systemctl enable docker.socket
+sudo gpasswd -a <your_username> docker
+```
+then run a test with:
+```bash
+docker run hello-world
+```
+
+6. (alternatively) install the [ESP-IDF](https://github.com/espressif/esp-idf) framework on your local pc and compile the code by hand.
+
 ### Configuration
 
-1. Set your serial device port in the `config.yaml`
+1. Make sure you add some rights to your usb device to connect to the korvo board. This depends a bit on the system, on linux, you have to add udev rules in `/etc/udev/rules.d/`, e.g. add a file  there `/etc/udev/rules.d/10-custom-usb.rules` with content:
+```
+# ubuntu vs. arch
+# GROUP="dialout" vs. GROUP="uucp"
+# rule for esp32 (devkit-c or korvo)
+KERNEL=="ttyUSB0", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", GROUP="uucp", MODE="0666"
+```
+and add to your group ("uucp" for arch, "dialout" for ubuntu), then reload and restart your pc:
+```
+sudo gpasswd -a <your_username> uucp
+sudo udevadm control --reload-rules
+```
+
+2. Set your serial device port in the `config.yaml` for linux it is usually `/dev/ttyUSB0`
 
 ```yaml
 generate_embedded_code:
   serial_device: <YOUR_DEVICE> 
 ```
 
-2. Move the downloaded dataset to any location, for instance, `./output/00_raw/` and edit `config.yaml` file at following location:
+3. Move the downloaded dataset to any location on your pc, for instance, `./output/00_raw/` and edit `config.yaml` file at following location:
 ```yaml
 datamodule:
   dataset:
@@ -145,8 +177,8 @@ sudo chmod a+rw $SERIAL_PORT
 
 ## Development
 
-- Modify `config.yaml`
-- Modify `model_tiny_ml.py` or create your own model that is based on the model_base class implemented
+- Modify `config.yaml` to change feature extraction or model parameters
+- Modify `model_tiny_ml.py` or create your own model that is based on the `ModelBase` class implemented
 
 > [!IMPORTANT]
 > Writing custom features rather than using what is implemented here, requires implementing a numerically equivalent version on the embedded target too!
@@ -169,6 +201,16 @@ Data Preprocessing and feature extraction can also be run separately to visualiz
 python datamodule_tiny_ml.py
 ```
 
+Compilation of the created src code (only works if model is trained and src is created by running `biodcase2026_tiny_ml.py` first):
+```bash
+python compile_embedded_src_code.py
+```
+
+Deployment of compiled code on the actual device (only works if code was compiled before):
+```bash
+python deploy_embedded_compiled_code.py
+```
+
 ### Data Processing and Feature Extraction
 
 The data processing pipeline follows these steps:
@@ -187,7 +229,7 @@ datamodule:
 The model training process is managed in `model_base.py` by the `ModelBase` class.
 You can customize the model architecture in `model_tiny_ml.py` and overwrite any function you wish to change.
 See also how the training is done in `biodcase2026_tiny_ml.py`
-You can also simply create a new model file, but make sure that your model class inherits the `ModelBase`.
+You can also simply create a new model file, but make sure that your model class inherits `ModelBase`.
 
 ### ESP32-S3 Deployment
 
@@ -262,6 +304,15 @@ The BioDCASE-Tiny competition evaluates models based on multiple criteria:
 
 ### Ranking
 Participants will be ranked separately for each one of the evaluation criteria.
+
+## Limitations
+This framework is still not perfect as we do not use real microphone data from the korvo-2 and merely run a profiler to check upon the model and feature extraction.
+Therefore, we are always looking for interested collaborators to improve upon this project and create an even better challenge starting point for BioDCASE.
+
+If you find issues in code or have problems in getting started, please create a github issue.
+
+## Credits
+Christian Walter (Vetmeduni Vienna) - Adaption of code from previous challenge [BioDCASE 2025 Task 3](https://github.com/birdnet-team/BioDCASE-Tiny-2025), extension to pytorch, adaption on new dataset
 
 ## License
 
