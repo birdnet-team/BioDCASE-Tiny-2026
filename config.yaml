@@ -96,7 +96,7 @@ model:
 
 # model training
 model_training:
-  num_epochs: 5
+  num_epochs: 100
 
 
 # reports

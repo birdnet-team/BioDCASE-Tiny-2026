@@ -1,6 +1,7 @@
 import yaml
 import torch
 import numpy as np
+from torchsummary import summary
 from pathlib import Path
 from plots import plot_confusion_matrix
 from pipeline_pytorch.pytorch_datamodule import DataloaderPytorch
@@ -103,15 +104,17 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
 def pytorch_model_taining(cfg, datamodule_train, datamodule_validation, datamodule_test):
   
   # dataloader
-  dataloader_train = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_train))
-  dataloader_validation = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_validation))
-  dataloader_test = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_test))
+  dataloader_train = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_train), **cfg['dataloader_train_kwargs'])
+  dataloader_validation = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_validation), **cfg['dataloader_validation_and_test_kwargs'])
+  dataloader_test = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_test), **cfg['dataloader_validation_and_test_kwargs'])
 
   # model
-  model = Baseline(cfg['model'], input_shape=datamodule_train.get_feature_shape_at_load(), num_classes=len(datamodule_train.get_label_dict()))
+  input_shape=datamodule_train.get_feature_shape_at_load()
+  model = Baseline(cfg['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()))
+  summary(model, input_size=input_shape)
 
   # run model training
-  run_model_training(cfg, model, dataloader_train, dataloader_validation, label_dict=datamodule_test.get_label_dict())
+  run_model_training(cfg, model, dataloader_train, dataloader_validation, label_dict=datamodule_train.get_label_dict())
 
   # run model testing
   run_model_testing(cfg, model, dataloader_test, label_dict=datamodule_test.get_label_dict())
