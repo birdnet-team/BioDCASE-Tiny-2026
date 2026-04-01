@@ -1,5 +1,7 @@
 import re
 import yaml
+import numpy as np
+from ai_edge_litert.interpreter import Interpreter
 from pathlib import Path
 from datetime import datetime
 
@@ -36,12 +38,118 @@ def _find_output_dir() -> Path | None:
     return None
 
 
+def get_conv2d_macs(input_shapes, output_shapes):
+    """Compute MACs for a CONV_2D layer."""
+    _, out_h, out_w, out_ch = output_shapes[0]
+    _, k_h, k_w, in_ch = input_shapes[1]
+    return out_h * out_w * k_h * k_w * in_ch * out_ch
+
+
+def get_depthwise_conv2d_macs(input_shapes, output_shapes):
+    """Compute MACs for a DEPTHWISE_CONV_2D layer."""
+    _, out_h, out_w, out_ch = output_shapes[0]
+    _, k_h, k_w, _ = input_shapes[1]
+    return out_h * out_w * k_h * k_w * out_ch
+
+
+def get_fully_connected_macs(input_shapes, output_shapes):
+    """Compute MACs for a FULLY_CONNECTED (dense) layer."""
+    weight_shape = input_shapes[1]
+    out_features = weight_shape[0]
+    in_features  = weight_shape[1]
+    return in_features * out_features
+
+
+def get_transpose_conv2d_macs(input_shapes, output_shapes):
+    """Compute MACs for a TRANSPOSE_CONV layer."""
+    _, out_h, out_w, out_ch = output_shapes[0]
+    _, k_h, k_w, in_ch = input_shapes[1]
+    return out_h * out_w * k_h * k_w * in_ch * out_ch
+
+
+def get_pool2d_macs(input_shapes, output_shapes):
+    """Compute MACs for AVG/MAX pool layers (comparisons counted as MACs)."""
+    _, out_h, out_w, out_ch = output_shapes[0]
+    _, in_h, in_w, _ = input_shapes[0]
+    # kernel size inferred from input/output ratio
+    k_h = in_h // out_h if out_h > 0 else 1
+    k_w = in_w // out_w if out_w > 0 else 1
+    return out_h * out_w * k_h * k_w * out_ch
+
+
+def get_elementwise_macs(output_shapes):
+    """Compute MACs for elementwise ops like ADD, MUL, SUB."""
+    shape = output_shapes[0]
+    result = 1
+    for dim in shape:
+        result *= dim
+    return result
+
+
+def compute_macs(model_path):
+    """
+    Estimate the total MAC (multiply-accumulate) count for a TFLite model.
+    Note: This is an estimate based on common TFLite ops and may not be exact.
+    The result is best used for relative comparisons between models or layers.
+    """
+    interpreter = Interpreter(model_path=str(model_path))
+    interpreter.allocate_tensors()
+
+    # Build a lookup dict for tensor details by tensor index
+    tensor_details = {t['index']: t for t in interpreter.get_tensor_details()}
+
+    total_macs = 0
+    results = []
+    skipped_ops = set()
+
+    for op in interpreter._get_ops_details():
+        op_name = op['op_name']
+
+        input_shapes = []
+        for t in op['inputs']:
+            if t >= 0 and t in tensor_details:
+                input_shapes.append(tensor_details[t]['shape'].tolist())
+
+        output_shapes = []
+        for t in op['outputs']:
+            if t >= 0 and t in tensor_details:
+                output_shapes.append(tensor_details[t]['shape'].tolist())
+
+        macs = 0
+        try:
+            if op_name == 'CONV_2D':
+                macs = get_conv2d_macs(input_shapes, output_shapes)
+            elif op_name == 'DEPTHWISE_CONV_2D':
+                macs = get_depthwise_conv2d_macs(input_shapes, output_shapes)
+            elif op_name == 'FULLY_CONNECTED':
+                macs = get_fully_connected_macs(input_shapes, output_shapes)
+            elif op_name == 'TRANSPOSE_CONV':
+                macs = get_transpose_conv2d_macs(input_shapes, output_shapes)
+            elif op_name in ('AVERAGE_POOL_2D', 'MAX_POOL_2D'):
+                macs = get_pool2d_macs(input_shapes, output_shapes)
+            elif op_name in ('ADD', 'MUL', 'SUB'):
+                macs = get_elementwise_macs(output_shapes)
+            else:
+                skipped_ops.add(op_name)
+        except (IndexError, ValueError) as e:
+            print(f"  Warning: could not compute MACs for {op_name}: {e}")
+
+        if macs > 0:
+            results.append((op_name, macs))
+            total_macs += macs
+
+    if skipped_ops:
+        print(f"Skipped ops (MACs not counted): {sorted(skipped_ops)}")
+
+    return total_macs
+
 def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict:
     """
     Parse ESP32 serial monitor output and write a YAML report.
 
     Extracts:
       - model size (bytes) from .tflite file found via MODEL_DIRS / *.TFLITE_MODEL_EXT
+      - Estimated MACs (multiply-accumulate operations) from the .tflite file
       - setup time (µs)         - block 1: GetFeatureConfig, AllocateTensors, etc.
       - preprocessing time (µs) - block 2: FFT, Mel filterbank, etc.
       - inference time (µs)     - block 3: CONV, DEPTHWISE_CONV, FULLY_CONNECTED, etc.
@@ -53,6 +161,7 @@ def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict
     result = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "model_size_bytes": None,
+        "Estimated MACs": None,
         "timing_us": {
             "setup": None,
             "preprocessing": None,
@@ -69,13 +178,17 @@ def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict
             "features_output": None,
             "model_input": None,
             "model_output": None,
-        },
+        },   
     }
 
     # Model size
     tflite = _find_tflite()
     if tflite:
         result["model_size_bytes"] = tflite.stat().st_size
+        try:
+            result["Estimated MACs"] = compute_macs(tflite)
+        except Exception as e:
+            print(f"[esp_monitor_parser] Error computing MACs: {e}")
     else:
         print(f"[esp_monitor_parser] Warning: no {TFLITE_MODEL_EXT} model found in {MODEL_DIRS}")
 
