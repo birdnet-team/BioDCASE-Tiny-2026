@@ -38,7 +38,7 @@ This year we changed the main framework to work on pytorch and transfered the up
 
 ## Dataset
 
-The BioDCASE-Tiny 2026 competition uses a 10-bird species (+ 1-background urban) dataset of field recordings from Germany:
+The dataset for this year's task consists of field recordings from Germany of 10 bird species and an additional set of urban backround sounds:
 
 - 11 class labels categorized in folders
 - 3,300 recordings of 3 seconds each...
@@ -290,6 +290,10 @@ The BioDCASE-Tiny competition evaluates models based on multiple criteria:
 Participants will be ranked separately for each one of the evaluation criteria.
 
 
+## Submission
+t.b.d
+
+
 ## Limitations
 This framework is still not perfect as we do not use real microphone data from the korvo-2 and merely run a profiler to check upon the model and feature extraction.
 Therefore, we are always looking for interested collaborators to improve upon this project and create an even better challenge starting point for BioDCASE.
@@ -303,8 +307,8 @@ This project is licensed under the Apache License 2.0 - see the license headers 
 
 
 ## Citation
-
-If you use the BioDCASE-Tiny framework or dataset in your research, please cite the following:
+t.b.d
+<!-- If you use the BioDCASE-Tiny framework or dataset in your research, please cite the following:
 
 ### Framework Citation
 
@@ -332,7 +336,7 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
   doi = {tba},
   url = {tba}
 }
-```
+``` -->
 
 
 ## Funding
