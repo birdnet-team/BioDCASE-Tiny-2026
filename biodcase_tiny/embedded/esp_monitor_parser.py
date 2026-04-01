@@ -41,7 +41,7 @@ def _find_output_dir() -> Path | None:
 def get_conv2d_macs(input_shapes, output_shapes):
     """Compute MACs for a CONV_2D layer."""
     _, out_h, out_w, out_ch = output_shapes[0]
-    out_ch_k, k_h, k_w, in_ch = input_shapes[1]
+    _, k_h, k_w, in_ch = input_shapes[1]
     return out_h * out_w * k_h * k_w * in_ch * out_ch
 
 
@@ -54,7 +54,7 @@ def get_depthwise_conv2d_macs(input_shapes, output_shapes):
 
 def get_fully_connected_macs(input_shapes, output_shapes):
     """Compute MACs for a FULLY_CONNECTED (dense) layer."""
-    weight_shape = input_shapes[1]      # [out_features, in_features]
+    weight_shape = input_shapes[1]
     out_features = weight_shape[0]
     in_features  = weight_shape[1]
     return in_features * out_features
