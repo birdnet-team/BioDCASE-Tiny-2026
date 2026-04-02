@@ -10,11 +10,10 @@ import yaml
 import json
 
 from keras import Model
-from keras.src.metrics import AUC
-from sklearn.metrics import ConfusionMatrixDisplay
+from pydantic import BaseModel
 from pathlib import Path
+from datamodule import DatamoduleTinyMl
 
-from pipeline_tensorflow.config import Config, load_config
 from pipeline_tensorflow.paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, CM_FIG_PATH, TFLITE_MODEL_PATH
 from pipeline_tensorflow.model import create_model, train_model
 
@@ -25,6 +24,15 @@ from keras.src.utils import to_categorical
 
 from plots import plot_confusion_matrix
 
+
+class ModelTraining(BaseModel):
+    class EarlyStopping(BaseModel):
+        patience: int
+    seed: int
+    n_epochs: int
+    shuffle_buff_n: int
+    batch_size: int
+    early_stopping: EarlyStopping
 
 def set_seeds(seed):
   """
@@ -86,20 +94,19 @@ def convert_model(keras_path, tflite_path):
   with open(tflite_path, 'wb') as f:
       f.write(tflite_model)
 
-
-def run_model_training(config: Config, datamodule_train, datamodule_validation):
+def run_model_training(cfg_tensorflow_training, datamodule_train, datamodule_validation):
   """
   model training
   """
 
-  # assertions
+  config_model_training=ModelTraining(**cfg_tensorflow_training)
   
   # create path if not already created
   if not KERAS_MODEL_PATH.parent.is_dir(): KERAS_MODEL_PATH.parent.mkdir()
   if not CM_FIG_PATH.parent.is_dir(): CM_FIG_PATH.parent.mkdir()
 
   # seed for reproducibility
-  set_seeds(config.model_training.seed)
+  set_seeds(config_model_training.seed)
 
   # feature shape
   c, w, h = datamodule_train.get_feature_shape_at_load()
@@ -109,15 +116,15 @@ def run_model_training(config: Config, datamodule_train, datamodule_validation):
   # data
   train_ds = tf_dataset(datamodule_train, features_shape,
     shuffle=True,
-    buffer_size=config.model_training.shuffle_buff_n, 
-    seed=config.model_training.seed,
-    batch_size=config.model_training.batch_size
+    buffer_size=config_model_training.shuffle_buff_n, 
+    seed=config_model_training.seed,
+    batch_size=config_model_training.batch_size
   )
   valid_ds = tf_dataset(datamodule_validation, features_shape,
     shuffle=True,
-    buffer_size=config.model_training.shuffle_buff_n, 
-    seed=config.model_training.seed,
-    batch_size=config.model_training.batch_size
+    buffer_size=config_model_training.shuffle_buff_n, 
+    seed=config_model_training.seed,
+    batch_size=config_model_training.batch_size
   )
   reference_ds = train_ds.shuffle(10000).take(100)
 
@@ -133,7 +140,7 @@ def run_model_training(config: Config, datamodule_train, datamodule_validation):
   model.summary()
 
   # model training
-  model = train_model(model, train_ds, valid_ds, config, class_weight)
+  model = train_model(model, train_ds, valid_ds, config_model_training, class_weight)
 
   # model validation
   y_true, y_pred = predict_validation(model, valid_ds)
@@ -156,8 +163,16 @@ if __name__ == "__main__":
   model training
   """
 
-  # config
-  config = load_config()
+  # yaml config file
+  cfg = yaml.safe_load(open('./config.yaml'))
 
-  # run model training
-  run_model_training(config)
+  # info
+  print("Hello Tiny ML 2026, version: {}".format(cfg['version']))
+
+  datamodule_train = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='train')
+  datamodule_validation = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='validation')
+  datamodule_test = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='test')
+  datamodule_train.info()
+
+  # model training
+  run_model_training(cfg['tensorflow_training'], datamodule_train, datamodule_validation)

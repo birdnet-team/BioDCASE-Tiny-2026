@@ -2,9 +2,8 @@
 # biodcase - main pipeline
 
 import yaml
-from pipeline_tensorflow.config import load_config
 from pipeline_tensorflow.model_training import run_model_training
-from pipeline_tensorflow.paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, TFLITE_MODEL_PATH, GEN_CODE_DIR
+from pipeline_tensorflow.paths import TFLITE_MODEL_PATH
 
 from datamodule import DatamoduleTinyMl
 from embedded_code_generation import run_compile_embedded_src_code, run_create_target_embedded_src_code, run_deploy_embedded_compiled_code
@@ -15,11 +14,6 @@ if __name__ == '__main__':
   """
   biodcase - main pipeline
   """
-
-  cfg = yaml.safe_load(open('./config.yaml'))
-
-  # config
-  config = load_config()
 
   # yaml config file
   cfg = yaml.safe_load(open('./config.yaml'))
@@ -33,7 +27,7 @@ if __name__ == '__main__':
   datamodule_train.info()
 
   # model training
-  run_model_training(config, datamodule_train, datamodule_validation)
+  run_model_training(cfg['tensorflow_training'], datamodule_train, datamodule_validation)
 
 
   # quantize

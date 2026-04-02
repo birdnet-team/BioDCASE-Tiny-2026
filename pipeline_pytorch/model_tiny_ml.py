@@ -28,7 +28,7 @@ class Baseline(ModelBase):
         nn.ReLU(),
         nn.MaxPool2d(4),
 
-        nn.Conv2d(n_filters * 2, n_filters * 2, kernel_size=3),
+        nn.Conv2d(n_filters * 2, n_filters * 4, kernel_size=3),
         nn.ReLU(),
 
         nn.AdaptiveAvgPool2d((1, 1))  # Global Average Pooling
@@ -38,7 +38,7 @@ class Baseline(ModelBase):
     self.classifier = nn.Sequential(
         nn.Flatten(),
         nn.Dropout(dropout),
-        nn.Linear(n_filters * 2, 32),
+        nn.Linear(n_filters * 4, 32),
         nn.ReLU(),
         nn.Linear(32, self.cfg['num_classes'])
     )

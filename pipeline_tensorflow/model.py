@@ -6,8 +6,6 @@ from keras.src.callbacks import EarlyStopping, TensorBoard
 import tensorflow as tf
 
 from pipeline_tensorflow.paths import TENSORBOARD_LOGS_PATH
-from pipeline_tensorflow.config import Config
-
 
 def create_model(input_shape, num_output_classes, n_filters_1=32, dropout=0.05) -> Model:
   """
@@ -44,12 +42,11 @@ def create_model(input_shape, num_output_classes, n_filters_1=32, dropout=0.05) 
   return model
 
 
-def train_model(model: Model, train_ds, valid_ds, config: Config, class_weight) -> Model:
+def train_model(model: Model, train_ds, valid_ds, tr_cfg, class_weight) -> Model:
   """
   train model
   """
   print("train start")
-  tr_cfg = config.model_training
   train_ds = train_ds.cache().shuffle(tr_cfg.shuffle_buff_n).prefetch(tf.data.AUTOTUNE)
   valid_ds = valid_ds.cache().prefetch(tf.data.AUTOTUNE)
   model.fit(

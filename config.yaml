@@ -99,6 +99,15 @@ model_training:
   num_epochs: 100
 
 
+tensorflow_training:
+  seed: 42
+  n_epochs: 100
+  shuffle_buff_n: 10000
+  batch_size: 32
+  early_stopping:
+    patience: 100
+
+
 # reports
 reports:
 
