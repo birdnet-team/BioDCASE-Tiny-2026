@@ -2,7 +2,10 @@
 # config for biodcase 2026 - tiny ml (task 3)
 
 # version id
-version: 0.1
+version: 0.2
+
+# skip deployment - useful for model testing only
+skip_deployment_flag: False
 
 # datamodule
 datamodule:
@@ -34,7 +37,7 @@ datamodule:
 
   # dataset
   dataset:
-    root_path: '/path/to/the/downloaded/dataset'
+    root_path: '../2026/Data/BioDCASE_2026_Task_3_TinyML_Dataset_V1'
     file_ext: '.wav'
 
   # intermediate
@@ -96,7 +99,16 @@ model:
 
 # model training
 model_training:
-  num_epochs: 20
+  num_epochs: 100
+
+
+tensorflow_training:
+  seed: 42
+  n_epochs: 100
+  shuffle_buff_n: 10000
+  batch_size: 32
+  early_stopping:
+    patience: 100
 
 
 # reports
@@ -120,4 +132,4 @@ generate_embedded_code:
   serial_device: '/dev/ttyUSB0'
 
   # quantize
-  quantize: False
+  quantize: True

@@ -172,10 +172,10 @@ def plot_confusion_matrix(y_target, y_predicted, labels=None, plot_path=None, sh
   ax.set_yticklabels(labels)
   ax.set_xlabel('Predicted Labels', fontsize=13)
   ax.set_ylabel('True Labels', fontsize=13)
-  ax.set_title('Confusion Matrix')
+  ax.set_title('Confusion Matrix with Accuracy: {:.4f}'.format(np.mean(np.array(y_predicted) == np.array(y_target)).item()))
   ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
 
-  # spacings
+  # spacing
   fig.subplots_adjust(bottom=0.25)
 
   # add colorbar

@@ -3,7 +3,7 @@
 
 import tensorflow as tf
 
-from paths import TFLITE_MODEL_PATH
+from pipeline_tensorflow.paths import TFLITE_MODEL_PATH
 
 
 if __name__ == "__main__":

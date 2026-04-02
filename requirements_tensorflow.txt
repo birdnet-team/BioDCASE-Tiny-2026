@@ -1,5 +1,5 @@
 # --
-# requirements for tensorflow framework
+# requirements for the tensorflow framework
 
 dask
 docker
@@ -15,10 +15,8 @@ tdqm
 tensorflow
 pyarrow
 pyyaml
+PyQt6
 pydantic
 soundfile
-
-
-# removed these:
-#kaleido
-#plotly
+tensorboard
+ai-edge-quantizer-nightly

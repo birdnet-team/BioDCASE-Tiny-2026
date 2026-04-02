@@ -3,7 +3,6 @@
 
 import sys
 import re
-import torch
 import yaml
 import numpy as np
 import soundfile
@@ -14,15 +13,12 @@ from pathlib import Path
 from feature_handler import FeatureHandler
 
 
-class DatamoduleTinyMl(torch.utils.data.Dataset):
+class DatamoduleTinyMl():
   """
   datamodule tiny ml
   """
 
   def __init__(self, cfg={}, **kwargs):
-
-    # super constructor
-    super().__init__()
 
     # arguments
     self.cfg = cfg
@@ -35,7 +31,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
     [sys.path.append(p) for p in self.cfg['add_python_paths'] if p not in sys.path]
 
     # members
-    self.fp_getitem = None
     self.features = None
     self.targets = None
     self.sample_ids = None
@@ -60,9 +55,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
 
     # path creation
     [p.mkdir(parents=True) for p in [self.intermediate_path, self.cached_path] if not p.is_dir()]
-
-    # setup get item function
-    self.fp_getitem = self.getitem_to_torch if self.cfg['to_torch'] else self.getitem_numpy
 
     # intermediate dataset
     self.create_intermediate_dataset()
@@ -89,16 +81,7 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
   def __len__(self):
     return self.length
 
-
   def __getitem__(self, idx):
-    return self.fp_getitem(idx)
-
-
-  def getitem_to_torch(self, idx):
-    return torch.from_numpy(self.features[idx]), torch.asarray(self.targets[idx]), torch.asarray(self.sample_ids[idx])
-
-
-  def getitem_numpy(self, idx):
     return self.features[idx], self.targets[idx], self.sample_ids[idx]
 
 
@@ -126,7 +109,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
         'transpose_features_extracted': True,
         'normalize_features': True,
         'to_float': True,
-        'to_torch': True,
         'add_channel_dimension': True,
         'add_batch_dimension': False,
         'channel_dimension_at_end': False,
@@ -167,7 +149,6 @@ class DatamoduleTinyMl(torch.utils.data.Dataset):
       'redo_intermediate': False,
       'redo_cache': False,
       'verbose': False,
-      'to_torch': True,
       }
 
     # config update
@@ -612,6 +593,7 @@ if __name__ == '__main__':
   datamodule tiny ml
   """
 
+  import torch
   from plots import plot_waveform_and_features
 
   # yaml config file
@@ -621,7 +603,7 @@ if __name__ == '__main__':
   datamodule = DatamoduleTinyMl(cfg['datamodule'], redo_all=False, redo_cache=False, load_set_on_init='train')
   datamodule.info()
 
-  # loader
+  # loader TODO
   dataloader = torch.utils.data.DataLoader(datamodule, **{'batch_size': 4, 'shuffle': True})
 
   # get label dict
@@ -641,8 +623,11 @@ if __name__ == '__main__':
       features = x[0]
       file_name = datamodule.get_file_name_id_by_single_sid(sid)
 
+      # show plot flag
+      show_plot_flag = True
+
       # play sound
-      datamodule.play_sound_by_single_sid(sid)
+      if show_plot_flag: datamodule.play_sound_by_single_sid(sid)
 
       # some prints
       print("file_name: ", file_name)
@@ -653,6 +638,6 @@ if __name__ == '__main__':
       print("label: ", target_to_label_dict[int(y)])
 
       # plot waveform and features
-      plot_waveform_and_features(waveform, features, show_plot_flag=True, title=file_name, fs=fs, spec_fs=datamodule.get_cache_info_spec_fs())
+      plot_waveform_and_features(waveform, features, show_plot_flag=show_plot_flag, title=file_name, fs=fs, spec_fs=datamodule.get_cache_info_spec_fs())
 
     break
