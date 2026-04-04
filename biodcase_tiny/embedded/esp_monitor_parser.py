@@ -5,38 +5,26 @@ from ai_edge_litert.interpreter import Interpreter
 from pathlib import Path
 from datetime import datetime
 
-# Model location config
-MODEL_DIRS  = [Path("./output/03_models")]
-TFLITE_MODEL_EXT = '.tflite'
-OUTPUT_DIRS = [Path("./output/04_reports"), Path("./reports")]
+
+# constants
+
+TFLITE_MODEL_EXT = ".tflite"
+
+FRAMEWORK_MODEL_DIRS = {
+    "tensorflow": Path("./output/03_models/tensorflow"),
+    "pytorch":    Path("./output/03_models/pytorch"),
+}
+
+REPORT_DIR  = Path("./output/04_reports")
+REPORT_FILE = REPORT_DIR / "monitor_report.yaml"
+
+FRAMEWORK_REPORT_DIRS = {
+    "tensorflow": REPORT_DIR / "tensorflow",
+    "pytorch":    REPORT_DIR / "pytorch",
+}
 
 
-def _find_tflite() -> Path | None:
-    """Return the first matching .tflite file across all known dirs and names."""
-    for folder in MODEL_DIRS:
-
-        # candidate files 
-        candidate_model_files = sorted(list(folder.glob('*' + TFLITE_MODEL_EXT)))
-
-        # nothing found
-        if not len(candidate_model_files): continue
-
-        # more than one file
-        #if len(candidate_model_files) != 1: print("***More than one .tflite file, take first")
-
-        # just take first model file
-        return Path(candidate_model_files[0])
-
-    return None
-
-
-def _find_output_dir() -> Path | None:
-    """Return the first existing output directory across all known options."""
-    for folder in OUTPUT_DIRS:
-        if folder.exists():
-            return folder
-    return None
-
+# mac estimation functions
 
 def get_conv2d_macs(input_shapes, output_shapes):
     """Compute MACs for a CONV_2D layer."""
@@ -44,13 +32,11 @@ def get_conv2d_macs(input_shapes, output_shapes):
     _, k_h, k_w, in_ch = input_shapes[1]
     return out_h * out_w * k_h * k_w * in_ch * out_ch
 
-
 def get_depthwise_conv2d_macs(input_shapes, output_shapes):
     """Compute MACs for a DEPTHWISE_CONV_2D layer."""
     _, out_h, out_w, out_ch = output_shapes[0]
     _, k_h, k_w, _ = input_shapes[1]
     return out_h * out_w * k_h * k_w * out_ch
-
 
 def get_fully_connected_macs(input_shapes, output_shapes):
     """Compute MACs for a FULLY_CONNECTED (dense) layer."""
@@ -59,109 +45,129 @@ def get_fully_connected_macs(input_shapes, output_shapes):
     in_features  = weight_shape[1]
     return in_features * out_features
 
-
 def get_transpose_conv2d_macs(input_shapes, output_shapes):
     """Compute MACs for a TRANSPOSE_CONV layer."""
     _, out_h, out_w, out_ch = output_shapes[0]
     _, k_h, k_w, in_ch = input_shapes[1]
     return out_h * out_w * k_h * k_w * in_ch * out_ch
 
-
 def get_pool2d_macs(input_shapes, output_shapes):
     """Compute MACs for AVG/MAX pool layers (comparisons counted as MACs)."""
     _, out_h, out_w, out_ch = output_shapes[0]
     _, in_h, in_w, _ = input_shapes[0]
-    # kernel size inferred from input/output ratio
     k_h = in_h // out_h if out_h > 0 else 1
     k_w = in_w // out_w if out_w > 0 else 1
     return out_h * out_w * k_h * k_w * out_ch
 
-
 def get_elementwise_macs(output_shapes):
     """Compute MACs for elementwise ops like ADD, MUL, SUB."""
-    shape = output_shapes[0]
     result = 1
-    for dim in shape:
+    for dim in output_shapes[0]:
         result *= dim
     return result
 
-
-def compute_macs(model_path):
+def compute_macs(model_path: Path) -> int:
     """
-    Estimate the total MAC (multiply-accumulate) count for a TFLite model.
+    Estimate the total MAC count for a TFLite model.
+
     Note: This is an estimate based on common TFLite ops and may not be exact.
     The result is best used for relative comparisons between models or layers.
     """
     interpreter = Interpreter(model_path=str(model_path))
     interpreter.allocate_tensors()
 
-    # Build a lookup dict for tensor details by tensor index
-    tensor_details = {t['index']: t for t in interpreter.get_tensor_details()}
+    tensor_details = {t["index"]: t for t in interpreter.get_tensor_details()}
 
     total_macs = 0
-    results = []
-    skipped_ops = set()
+    skipped_ops: set[str] = set()
 
     for op in interpreter._get_ops_details():
-        op_name = op['op_name']
+        op_name = op["op_name"]
 
-        input_shapes = []
-        for t in op['inputs']:
-            if t >= 0 and t in tensor_details:
-                input_shapes.append(tensor_details[t]['shape'].tolist())
-
-        output_shapes = []
-        for t in op['outputs']:
-            if t >= 0 and t in tensor_details:
-                output_shapes.append(tensor_details[t]['shape'].tolist())
+        input_shapes = [
+            tensor_details[t]["shape"].tolist()
+            for t in op["inputs"]
+            if t >= 0 and t in tensor_details
+        ]
+        output_shapes = [
+            tensor_details[t]["shape"].tolist()
+            for t in op["outputs"]
+            if t >= 0 and t in tensor_details
+        ]
 
         macs = 0
         try:
-            if op_name == 'CONV_2D':
+            if op_name == "CONV_2D":
                 macs = get_conv2d_macs(input_shapes, output_shapes)
-            elif op_name == 'DEPTHWISE_CONV_2D':
+            elif op_name == "DEPTHWISE_CONV_2D":
                 macs = get_depthwise_conv2d_macs(input_shapes, output_shapes)
-            elif op_name == 'FULLY_CONNECTED':
+            elif op_name == "FULLY_CONNECTED":
                 macs = get_fully_connected_macs(input_shapes, output_shapes)
-            elif op_name == 'TRANSPOSE_CONV':
+            elif op_name == "TRANSPOSE_CONV":
                 macs = get_transpose_conv2d_macs(input_shapes, output_shapes)
-            elif op_name in ('AVERAGE_POOL_2D', 'MAX_POOL_2D'):
+            elif op_name in ("AVERAGE_POOL_2D", "MAX_POOL_2D"):
                 macs = get_pool2d_macs(input_shapes, output_shapes)
-            elif op_name in ('ADD', 'MUL', 'SUB'):
+            elif op_name in ("ADD", "MUL", "SUB"):
                 macs = get_elementwise_macs(output_shapes)
             else:
                 skipped_ops.add(op_name)
         except (IndexError, ValueError) as e:
             print(f"  Warning: could not compute MACs for {op_name}: {e}")
 
-        if macs > 0:
-            results.append((op_name, macs))
-            total_macs += macs
+        total_macs += macs
 
     if skipped_ops:
         print(f"Skipped ops (MACs not counted): {sorted(skipped_ops)}")
 
     return total_macs
 
-def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict:
+
+# internal helper functions
+
+def _find_tflite_in(folder: Path) -> Path | None:
+    """Return the first .tflite file found in *folder*, or None."""
+    candidates = sorted(folder.glob("*" + TFLITE_MODEL_EXT))
+    return candidates[0] if candidates else None
+
+def _load_report() -> dict:
+    """Load the YAML report from the standard report path."""
+    if not REPORT_FILE.exists():
+        raise FileNotFoundError(f"Report not found: {REPORT_FILE}")
+    with open(REPORT_FILE) as f:
+        return yaml.safe_load(f)
+
+def _save_report(report: dict) -> None:
+    """Persist *report* to the standard report path."""
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    with open(REPORT_FILE, "w") as f:
+        yaml.dump(report, f, default_flow_style=False, sort_keys=False)
+    print(f"[esp_monitor_parser] Report written to {REPORT_FILE}")
+
+
+# monitor report functions
+
+def parse_monitor_output(lines: list[str]) -> dict:
     """
-    Parse ESP32 serial monitor output and write a YAML report.
+    Parse ESP32 serial monitor output and write a YAML report to
+    ./output/04_reports/monitor_report.yaml.
+    (File will be moved to a framework-specific subdir by finalize_monitor_report() later.)
 
     Extracts:
-      - model size (bytes) from .tflite file found via MODEL_DIRS / *.TFLITE_MODEL_EXT
-      - Estimated MACs (multiply-accumulate operations) from the .tflite file
-      - setup time (µs)         - block 1: GetFeatureConfig, AllocateTensors, etc.
-      - preprocessing time (µs) - block 2: FFT, Mel filterbank, etc.
-      - inference time (µs)     - block 3: CONV, DEPTHWISE_CONV, FULLY_CONNECTED, etc.
-      - total time (µs)         - sum of all three
-      - RAM arena allocation (total, head, tail)
-      - CRC32 checksums (reproducibility checks)
-    """
+      - setup time (µs)         — block 1: GetFeatureConfig, AllocateTensors, …
+      - preprocessing time (µs) — block 2: FFT, Mel filterbank, …
+      - inference time (µs)     — block 3: CONV, DEPTHWISE_CONV, FULLY_CONNECTED, …
+      - total time (µs)         — sum of the three blocks above
+      - RAM arena allocation    — total, head, tail
+      - CRC32 checksums         — audio_input, features_output, model_input, model_output
 
-    result = {
+    Model size and MACs are intentionally left as None here; call
+    finalize_monitor_report() after the pipeline has finished to fill them in.
+    """
+    report = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "framework": None,
         "model_size_bytes": None,
-        "Estimated MACs": None,
+        "estimated_macs": None,
         "timing_us": {
             "setup": None,
             "preprocessing": None,
@@ -178,26 +184,11 @@ def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict
             "features_output": None,
             "model_input": None,
             "model_output": None,
-        },   
+        },
     }
 
-    # Model size
-    tflite = _find_tflite()
-    if tflite:
-        result["model_size_bytes"] = tflite.stat().st_size
-        try:
-            result["Estimated MACs"] = compute_macs(tflite)
-        except Exception as e:
-            print(f"[esp_monitor_parser] Error computing MACs: {e}")
-    else:
-        print(f"[esp_monitor_parser] Warning: no {TFLITE_MODEL_EXT} model found in {MODEL_DIRS}")
-
-    # The log contains three CSV timing tables:
-    #   1st = model setup/init  (GetFeatureConfig, AllocateTensors, ...)
-    #   2nd = feature extraction (FFT, Mel, ...)
-    #   3rd = TFLite ops / inference (CONV, DEPTHWISE_CONV, ...)
     timing_block_index = 0
-    in_timing_block = False
+    in_timing_block    = False
 
     for line in lines:
 
@@ -212,61 +203,105 @@ def parse_monitor_output(lines: list[str], report_dir: Path = Path(".")) -> dict
             if m:
                 us = int(m.group(1))
                 if timing_block_index == 1:
-                    result["timing_us"]["setup"] = us
+                    report["timing_us"]["setup"] = us
                 elif timing_block_index == 2:
-                    result["timing_us"]["preprocessing"] = us
+                    report["timing_us"]["preprocessing"] = us
                 elif timing_block_index == 3:
-                    result["timing_us"]["inference"] = us
+                    report["timing_us"]["inference"] = us
                 in_timing_block = False
                 continue
 
         # CRC32 checksums
-        m = re.match(r'Audio Input CRC32:\s*(0x[0-9A-Fa-f]+)', line)
+        m = re.match(r"Audio Input CRC32:\s*(0x[0-9A-Fa-f]+)", line)
         if m:
-            result["crc32"]["audio_input"] = m.group(1)
+            report["crc32"]["audio_input"] = m.group(1)
             continue
 
-        m = re.match(r'Output Features CRC32:\s*(0x[0-9A-Fa-f]+)', line)
+        m = re.match(r"Output Features CRC32:\s*(0x[0-9A-Fa-f]+)", line)
         if m:
-            result["crc32"]["features_output"] = m.group(1)
+            report["crc32"]["features_output"] = m.group(1)
             continue
 
-        m = re.match(r'Input CRC32:\s*(0x[0-9A-Fa-f]+)', line)
+        m = re.match(r"Input CRC32:\s*(0x[0-9A-Fa-f]+)", line)
         if m:
-            result["crc32"]["model_input"] = m.group(1)
+            report["crc32"]["model_input"] = m.group(1)
             continue
 
-        m = re.match(r'Output CRC32:\s*(0x[0-9A-Fa-f]+)', line)
+        m = re.match(r"Output CRC32:\s*(0x[0-9A-Fa-f]+)", line)
         if m:
-            result["crc32"]["model_output"] = m.group(1)
+            report["crc32"]["model_output"] = m.group(1)
             continue
 
         # RAM / arena allocation
-        m = re.match(r'\[RecordingMicroAllocator\] Arena allocation total\s+(\d+)\s+bytes', line)
+        m = re.match(r"\[RecordingMicroAllocator\] Arena allocation total\s+(\d+)\s+bytes", line)
         if m:
-            result["ram_bytes"]["arena_total"] = int(m.group(1))
+            report["ram_bytes"]["arena_total"] = int(m.group(1))
             continue
 
-        m = re.match(r'\[RecordingMicroAllocator\] Arena allocation head\s+(\d+)\s+bytes', line)
+        m = re.match(r"\[RecordingMicroAllocator\] Arena allocation head\s+(\d+)\s+bytes", line)
         if m:
-            result["ram_bytes"]["arena_head"] = int(m.group(1))
+            report["ram_bytes"]["arena_head"] = int(m.group(1))
             continue
 
-        m = re.match(r'\[RecordingMicroAllocator\] Arena allocation tail\s+(\d+)\s+bytes', line)
+        m = re.match(r"\[RecordingMicroAllocator\] Arena allocation tail\s+(\d+)\s+bytes", line)
         if m:
-            result["ram_bytes"]["arena_tail"] = int(m.group(1))
+            report["ram_bytes"]["arena_tail"] = int(m.group(1))
             continue
 
     # Derived total time
-    times = [result["timing_us"][k] for k in ("setup", "preprocessing", "inference")]
+    times = [report["timing_us"][k] for k in ("setup", "preprocessing", "inference")]
     if all(t is not None for t in times):
-        result["timing_us"]["total"] = sum(times)
+        report["timing_us"]["total"] = sum(times)
 
-    # Write YAML
-    output_dir = _find_output_dir() or report_dir
-    report_path = Path(output_dir) / "monitor_report.yaml"
-    with open(report_path, "w") as f:
-        yaml.dump(result, f, default_flow_style=False, sort_keys=False)
+    _save_report(report)
+    return report
 
-    print(f"[esp_monitor_parser] Report written to {report_path}")
-    return result
+def finalize_monitor_report(framework: str) -> dict:
+    """
+    Add information about framework, model size, and MACs to existing YAML.
+
+    framework : {"tensorflow", "pytorch"}
+        Used framework determines the used subfolder for model lookup and report output:
+          - "tensorflow" -> ./output/03_models/tensorflow/ & ./output/04_reports/tensorflow/
+          - "pytorch"    -> ./output/03_models/pytorch/ & ./output/04_reports/pytorch/
+    """
+    if framework not in FRAMEWORK_MODEL_DIRS:
+        raise ValueError(
+            f"Unknown framework {framework!r}. "
+            f"Must be one of: {sorted(FRAMEWORK_MODEL_DIRS)}"
+        )
+
+    report = _load_report()
+    report["framework"] = framework
+
+    model_dir = FRAMEWORK_MODEL_DIRS[framework]
+    tflite    = _find_tflite_in(model_dir)
+
+    if tflite is None:
+        print(
+            f"[esp_monitor_parser] Warning: no {TFLITE_MODEL_EXT} model found "
+            f"in {model_dir}"
+        )
+        report["model_size_bytes"] = None
+        report["estimated_macs"]   = None
+    else:
+        report["model_size_bytes"] = tflite.stat().st_size
+        try:
+            report["estimated_macs"] = compute_macs(tflite)
+        except Exception as e:
+            print(f"[esp_monitor_parser] Error computing MACs: {e}")
+            report["estimated_macs"] = None
+
+
+    # Write into the framework subfolder and remove the staging file
+    final_dir  = FRAMEWORK_REPORT_DIRS[framework]
+    final_path = final_dir / "monitor_report.yaml"
+    final_dir.mkdir(parents=True, exist_ok=True)
+ 
+    with open(final_path, "w") as f:
+        yaml.dump(report, f, default_flow_style=False, sort_keys=False)
+    print(f"[esp_monitor_parser] Report written to {final_path}")
+ 
+    REPORT_FILE.unlink(missing_ok=True)
+ 
+    return report

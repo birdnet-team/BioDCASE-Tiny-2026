@@ -166,11 +166,11 @@ class ESPToolchain:
         print(decoded)
         collected_lines.append(decoded)
         if "main_task: Returned from app_main()" in decoded:
-          parse_monitor_output(collected_lines, report_dir=Path("."))
+          parse_monitor_output(collected_lines)
           container.stop()
     except (Exception, KeyboardInterrupt):
       if collected_lines:
-        parse_monitor_output(collected_lines, report_dir=Path("."))
+        parse_monitor_output(collected_lines)
       container.stop()
 
 
