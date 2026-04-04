@@ -10,7 +10,6 @@ from pipeline_tensorflow.model_training import run_model_training
 from embedded_code_generation import run_compile_embedded_src_code, run_create_target_embedded_src_code, run_deploy_embedded_compiled_code
 from model_evaluation import model_evaluation
 from model_quantization import model_quantization
-from biodcase_tiny.embedded.esp_monitor_parser import finalize_monitor_report
 
 if __name__ == '__main__':
   """
@@ -59,7 +58,3 @@ if __name__ == '__main__':
 
   # deploy
   run_deploy_embedded_compiled_code(cfg)
-
-  # finalize the monitor report yaml
-  finalize_monitor_report("tensorflow")
-
