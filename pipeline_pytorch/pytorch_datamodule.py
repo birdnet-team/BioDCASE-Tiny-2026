@@ -11,6 +11,10 @@ import gzip
 import functools
 
 from pathlib import Path
+
+# add root path of project if called as main
+if __name__ == '__main__': [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
+
 from datamodule import DatamoduleTinyMl
 
 

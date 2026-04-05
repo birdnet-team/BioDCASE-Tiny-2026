@@ -1,10 +1,16 @@
 # --
 # model tiny ml
 
+import sys
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from pathlib import Path
+
+# add root path of project if called as main
+if __name__ == '__main__': [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
 
 from pipeline_pytorch.model_base import ModelBase
 
@@ -58,7 +64,7 @@ if __name__ == '__main__':
   import yaml
 
   # yaml config file
-  cfg = yaml.safe_load(open("./config.yaml"))
+  cfg = yaml.safe_load(open(Path(__file__).parent.parent / 'config.yaml'))
 
   # params
   num_classes = 11

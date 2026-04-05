@@ -1,11 +1,17 @@
+import sys
 import yaml
 import torch
 import numpy as np
 from torchsummary import summary
 from pathlib import Path
+
+# add root path of project if called as main
+if __name__ == '__main__': [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
+
 from plots import plot_confusion_matrix
 from pipeline_pytorch.pytorch_datamodule import DataloaderPytorch
 from pipeline_pytorch.model_tiny_ml import Baseline
+
 
 def run_model_training(cfg, model, dataloader_train, dataloader_validation, label_dict):
   """
@@ -13,7 +19,7 @@ def run_model_training(cfg, model, dataloader_train, dataloader_validation, labe
   """
 
   # info
-  print("\nTrain model...\n")
+  print("\nTrain model on device: {}...\n".format(model.get_device_full_str()))
 
   # epochs
   for epoch in range(cfg['model_training']['num_epochs']):
@@ -37,17 +43,25 @@ def run_model_training(cfg, model, dataloader_train, dataloader_validation, labe
     # evaluation mode
     model.set_model_to_evaluation_mode()
 
+    # targets and predictions
+    y_targets = np.empty(shape=0, dtype=np.int8)
+    y_predictions = np.empty(shape=0, dtype=np.int8)
+
     # validation loader
     for data in dataloader_validation: 
 
       # validation step
       y_pred, loss = model.validation_step(data)
 
+      # append targets and predictions
+      y_targets = np.append(y_targets, data[1].numpy().astype(np.int8))
+      y_predictions = np.append(y_predictions, y_pred.astype(np.int8))
+
       # loss update
       epoch_validation_loss.append(loss)
 
     # epoch info
-    print("Epoch {:03} with train loss: {:.6f} and val loss: {:.6f}".format(epoch + 1, np.mean(epoch_train_loss), np.mean(epoch_validation_loss),))
+    print("Epoch {:03} - train loss: {:.4f}, val: [loss: {:.4f}, acc: {:.4f}]".format(epoch + 1, np.mean(epoch_train_loss), np.mean(epoch_validation_loss), np.mean(y_targets == y_predictions)))
 
   # info
   print("Training of model finished!")
@@ -65,7 +79,7 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   """
 
   # info
-  print("\nTest model...\n")
+  print("\nTest model on device: {}...\n".format(model.get_device_full_str()))
 
   # predictions and targets
   y_predictions = []
@@ -100,7 +114,6 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   print("Testing of model finished!")
 
 
-
 def pytorch_model_taining(cfg, datamodule_train, datamodule_validation, datamodule_test):
   
   # dataloader
@@ -109,9 +122,11 @@ def pytorch_model_taining(cfg, datamodule_train, datamodule_validation, datamodu
   dataloader_test = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_test), **cfg['dataloader_validation_and_test_kwargs'])
 
   # model
-  input_shape=datamodule_train.get_feature_shape_at_load()
+  input_shape = datamodule_train.get_feature_shape_at_load()
   model = Baseline(cfg['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()))
-  summary(model, input_size=input_shape)
+
+  # summary
+  summary(model, input_size=input_shape, device=model.get_device_type_str())
 
   # run model training
   run_model_training(cfg, model, dataloader_train, dataloader_validation, label_dict=datamodule_train.get_label_dict())

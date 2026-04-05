@@ -218,10 +218,10 @@ class ModelBase(torch.nn.Module):
     # info
     print("\nSave tflite model!")
 
-    # # hide warnings of tensorflow
-    # import os
-    # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    # os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+    # hide warnings of tensorflow
+    import os
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
     import litert_torch
 
     # to eval
@@ -230,9 +230,20 @@ class ModelBase(torch.nn.Module):
     # sample inputs
     sample_inputs = (torch.randn((1,) + tuple(self.get_input_shape())),)
 
+    # model back to origin device flag
+    model_back_to_origin_device_flag = False
+
+    # model to cpu
+    if self.get_device_type_str() != 'cpu': 
+      self.to(device='cpu')
+      model_back_to_origin_device_flag = True
+
     # model conversion
     tflite_model = litert_torch.convert(self, sample_inputs)
     tflite_model.export(self.model_file_path.with_suffix('.tflite').resolve())
+
+    # back to origin device
+    if model_back_to_origin_device_flag: self.to(device=self.device)
 
 
   def load(self, model_file):
@@ -323,6 +334,8 @@ class ModelBase(torch.nn.Module):
   def get_model_file_path(self): return self.model_file_path
   def get_tflite_model_file_path(self): return self.model_file_path.with_suffix('.tflite')
   def get_model_name(self): return self.cfg['model_name']
+  def get_device_type_str(self): return str(self.device).split(':')[0]
+  def get_device_full_str(self): return str(self.device)
 
 
   # --
@@ -341,7 +354,7 @@ if __name__ == '__main__':
   import yaml
 
   # yaml config file
-  cfg = yaml.safe_load(open("./config.yaml"))
+  cfg = yaml.safe_load(open(Path(__file__).parent.parent / 'config.yaml'))
 
   # num classes
   num_classes = 4
@@ -371,10 +384,14 @@ if __name__ == '__main__':
   # validation step
   y_pred, loss = model.validation_step(data)
 
+  # to numpy
+  y = y.numpy()
+
+  # infos
   print("actual: ", y)
   print("prediction: ", y_pred)
   print("loss: ", loss)
-  print("acc: ", torch.mean(y == y_pred).item())
+  print("acc: ", np.mean(y == y_pred).item())
 
   # save model
   model.save()
