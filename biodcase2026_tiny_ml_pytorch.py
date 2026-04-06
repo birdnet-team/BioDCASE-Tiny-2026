@@ -7,6 +7,7 @@ from pathlib import Path
 
 from datamodule import DatamoduleTinyMl
 from pipeline_pytorch.model_training import pytorch_model_taining
+from pipeline_pytorch.paths import MODELS_DIR
 from embedded_code_generation import run_compile_embedded_src_code, run_create_target_embedded_src_code, run_deploy_embedded_compiled_code
 from model_evaluation import model_evaluation
 from model_quantization import model_quantization
@@ -35,7 +36,7 @@ if __name__ == '__main__':
   # Quantization and evaluation
   submission_cfg=yaml.safe_load(open('./submission/config.yaml'))
   model_name=submission_cfg['inference_handler_pytorch']['model']['attr']
-  tflite_path = Path(cfg['model']['save_path']) / f"{model_name}.tflite"
+  tflite_path = MODELS_DIR / f"{model_name}.tflite"
 
   print(tflite_path)
 
