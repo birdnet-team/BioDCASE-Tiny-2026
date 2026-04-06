@@ -39,11 +39,10 @@ inference_handler:
       add_batch_dimension: True
       channel_dimension_at_end: False
 
-
   # model
   model:
-    module: model_tiny_ml
-    attr: ModelTinyMl
+    module: pipeline_pytorch.model_tiny_ml
+    attr: Baseline
     args: []
     kwargs: {}
 
@@ -82,10 +81,9 @@ inference_handler_pytorch:
       add_batch_dimension: True
       channel_dimension_at_end: False
 
-
   # model
   model:
-    module: model_tiny_ml
+    module: pipeline_pytorch.model_tiny_ml
     attr: Baseline
     args: []
     kwargs: {}
@@ -117,13 +115,13 @@ inference_handler_tensorflow:
       mel_low_hz: 125
       mel_high_hz: 7500
       mel_post_scaling_bits: 6
-      transpose_features_extracted: False
-      normalize_features: False
-      to_float: False
+      transpose_features_extracted: True
+      normalize_features: True
+      to_float: True
       to_torch: False
       add_channel_dimension: True
-      add_batch_dimension: True
-      channel_dimension_at_end: True
+      add_batch_dimension: False
+      channel_dimension_at_end: False
 
   # model
   model:

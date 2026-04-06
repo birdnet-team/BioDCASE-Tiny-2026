@@ -167,6 +167,9 @@ class ModelBase(torch.nn.Module):
     predict
     """
 
+    # assert torch tensor
+    assert torch.is_tensor(x), "Your data for prediction is not a torch tensor!"
+
     # make sure eval mode is activated
     self.set_model_to_evaluation_mode()
 

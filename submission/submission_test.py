@@ -9,7 +9,7 @@ import soundfile
 from pathlib import Path
 from inference_handler import InferenceHandler
 
-# required package paths
+# required package paths - root path
 [sys.path.append(p) for p in[str(Path(__file__).parent.parent)] if p not in sys.path]
 
 from plots import plot_confusion_matrix
@@ -23,6 +23,10 @@ def run_inference(cfg, inference_scores_file):
 
   # inference handler
   inference_handler = InferenceHandler(cfg['inference_handler'])
+
+  # for testing
+  #inference_handler = InferenceHandler(cfg['inference_handler_tensorflow'])
+  #inference_handler = InferenceHandler(cfg['inference_handler_pytorch'])
 
   # info
   inference_handler.info()
@@ -148,8 +152,8 @@ if __name__ == '__main__':
   # report dir
   report_dir = Path(__file__).parent / 'reports'
 
-  # assertion
-  assert report_dir.exists(), "Something is wrong with your report directory!"
+  # create directory
+  if not report_dir.is_dir(): report_dir.mkdir()
 
   # files
   submission_results_file = report_dir / 'submission_results.yaml'
@@ -157,7 +161,7 @@ if __name__ == '__main__':
   monitor_report_file = report_dir / 'monitor_report.yaml'
 
   # remove previous generated files
-  [(print("remove: ", f.name), f.unlink()) for f in [submission_results_file, inference_scores_file, monitor_report_file] if f.is_file()]
+  [(print("remove: ", f.name), f.unlink()) for f in [submission_results_file, inference_scores_file, monitor_report_file, *list(report_dir.glob('*.png'))] if f.is_file()]
 
   # inference
   run_inference(cfg, inference_scores_file)
