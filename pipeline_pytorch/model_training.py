@@ -9,6 +9,7 @@ from pathlib import Path
 if __name__ == '__main__': [sys.path.append(p) for p in [str(Path(__file__).parent.parent)] if p not in sys.path]
 
 from plots import plot_confusion_matrix
+from pipeline_pytorch.paths import MODELS_DIR, CM_FIG_PATH
 from pipeline_pytorch.pytorch_datamodule import DataloaderPytorch
 from pipeline_pytorch.model_tiny_ml import Baseline
 
@@ -99,9 +100,10 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   acc = np.mean(np.array(y_predictions) == np.array(y_targets)).item()
 
   # report path
-  report_path = Path(cfg['reports']['report_path'])
-  if not report_path.is_dir(): report_path.mkdir(parents=True)
-  plot_path_cm = report_path / 'cm_{}.png'.format(model.get_model_name())
+  #report_path = Path(cfg['reports']['report_path'])
+  #if not report_path.is_dir(): report_path.mkdir(parents=True)
+  #plot_path_cm = report_path / 'cm_{}.png'.format(model.get_model_name())
+  plot_path_cm = CM_FIG_PATH.parent / 'cm_{}.png'.format(model.get_model_name())
 
   # confusion matrix
   plot_confusion_matrix(y_targets, y_predictions, labels=list(label_dict.keys()), plot_path=plot_path_cm)
@@ -123,7 +125,8 @@ def pytorch_model_taining(cfg, datamodule_train, datamodule_validation, datamodu
 
   # model
   input_shape = datamodule_train.get_feature_shape_at_load()
-  model = Baseline(cfg['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()))
+  #model = Baseline(cfg['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()))
+  model = Baseline(cfg['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()), save_path=str(MODELS_DIR))
 
   # summary
   summary(model, input_size=input_shape, device=model.get_device_type_str())
