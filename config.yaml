@@ -77,39 +77,43 @@ datamodule:
   to_torch: True
 
 
-# dataloader kwargs (for pytorch dataloader)
-dataloader_train_kwargs:
-  batch_size: 32
-  shuffle: true
+# --
+# choose either pytorch or tensorflow framework
+# for pytorch framework run 'python biodcase2026_tiny_ml_pytorch'
 
-dataloader_validation_and_test_kwargs:
-  batch_size: 32
-  shuffle: false
+# pytorch framework
+pytorch_framework:
 
+  dataloader_train_kwargs:
+    batch_size: 32
+    shuffle: true
 
-# model
-model:
-  save_path: './output/03_models'
-  device:
-    use_cpu: False
-    device_name: 'cuda:0'
-  criterion: {'module': 'torch.nn', 'attr': 'CrossEntropyLoss', 'kwargs': {}}
-  optimizer: {'module': 'torch.optim', 'attr': 'Adam', 'kwargs': {'lr': 0.001, 'betas': [0.9, 0.999]}}
-  verbose: False
+  dataloader_validation_and_test_kwargs:
+    batch_size: 32
+    shuffle: false
 
-# model training - pytorch
-model_training:
-  num_epochs: 100
+  model:
+    device:
+      use_cpu: False
+      device_name: 'cuda:0'
+    criterion: {'module': 'torch.nn', 'attr': 'CrossEntropyLoss', 'kwargs': {}}
+    optimizer: {'module': 'torch.optim', 'attr': 'Adam', 'kwargs': {'lr': 0.001, 'betas': [0.9, 0.999]}}
+    verbose: False
 
+  model_training:
+    num_epochs: 100
 
-# model training - tensorflow
-tensorflow_training:
-  seed: 42
-  n_epochs: 100
-  shuffle_buff_n: 10000
-  batch_size: 32
-  early_stopping:
-    patience: 100
+# tensorflow framework
+tensorflow_framework:
+
+  # model training - tensorflow
+  model_training:
+    seed: 42
+    n_epochs: 100
+    shuffle_buff_n: 10000
+    batch_size: 32
+    early_stopping:
+      patience: 100
 
 
 # reports

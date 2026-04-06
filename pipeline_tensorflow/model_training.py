@@ -12,7 +12,6 @@ import json
 from keras import Model
 from pydantic import BaseModel
 from pathlib import Path
-from datamodule import DatamoduleTinyMl
 
 from pipeline_tensorflow.paths import KERAS_MODEL_PATH, REFERENCE_DATASET_PATH, CM_FIG_PATH, TFLITE_MODEL_PATH
 from pipeline_tensorflow.model import create_model, train_model
@@ -158,21 +157,11 @@ def run_model_training(cfg_tensorflow_training, datamodule_train, datamodule_val
 
   convert_model(KERAS_MODEL_PATH, TFLITE_MODEL_PATH)
 
-if __name__ == "__main__":
+  return model
+
+
+def tensorflow_model_training(cfg_framework, datamodule_train, datamodule_validation, datamodule_test):
   """
-  model training
-  """
-
-  # yaml config file
-  cfg = yaml.safe_load(open('./config.yaml'))
-
-  # info
-  print("Hello Tiny ML 2026, version: {}".format(cfg['version']))
-
-  datamodule_train = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='train')
-  datamodule_validation = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='validation')
-  datamodule_test = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='test')
-  datamodule_train.info()
-
-  # model training
-  run_model_training(cfg['tensorflow_training'], datamodule_train, datamodule_validation)
+  tensorflow model training
+  """  
+  return run_model_training(cfg_framework['model_training'], datamodule_train, datamodule_validation)

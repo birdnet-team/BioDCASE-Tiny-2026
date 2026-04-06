@@ -12,16 +12,14 @@ def clean_input_layer_name(name: str) -> str:
     name = re.sub(r"^serving_default_", "", name)
     return name
 
-def model_quantization(cfg_datamodule, tfliteFP32path, tfliteINT8path):
+def model_quantization(datamodule_test, tfliteFP32path, tfliteINT8path):
     interpreter = Interpreter(model_path=str(tfliteFP32path))
 
     input_details = interpreter.get_input_details()
 
-    datamodule_calibrate = DatamoduleTinyMl(cfg_datamodule, load_set_on_init='test')
-
     calibration_samples=[]
 
-    for i, sample in enumerate(datamodule_calibrate.features):
+    for i, sample in enumerate(datamodule_test.features):
       calibration_samples.append({
             clean_input_layer_name(input_details[0]['name']): sample
         })

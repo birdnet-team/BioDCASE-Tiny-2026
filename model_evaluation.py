@@ -63,11 +63,12 @@ def run_model(input_data, model_path):
   return np.array(y_preds)
 
 
-def model_evaluation(cfg_datamodule, tflitepath):
-  datamodule_calibrate = DatamoduleTinyMl(cfg_datamodule, load_set_on_init='test')
-  X_test, y_true = datamodule_calibrate.features, datamodule_calibrate.targets
+def model_evaluation(datamodule_test, tflitepath):
   
-  y_pred= run_model(X_test, tflitepath)
+  # get features and targets
+  X_test, y_true = datamodule_test.features, datamodule_test.targets
+  
+  y_pred = run_model(X_test, tflitepath)
   y_prob = softmax(y_pred, axis=1)
 
   auc = roc_auc_score(y_true, y_prob,
@@ -81,9 +82,25 @@ def model_evaluation(cfg_datamodule, tflitepath):
    
 
 if __name__ == '__main__':
+
   # yaml config file
+  cfg = yaml.safe_load(open('./config.yaml'))
 
-  cfg_datamodule = yaml.safe_load(open('./config.yaml'))['datamodule']
+  # test datamodule
+  datamodule_test = DatamoduleTinyMl(cfg['datamodule'], load_set_on_init='test')
 
-  model_evaluation(cfg_datamodule, "output/03_models/Baseline.tflite")
-  model_evaluation(cfg_datamodule, "output/03_models/Baseline.tflite")
+  # models dir
+  from pipeline_pytorch.paths import MODELS_DIR as pytorch_model_dir
+  from pipeline_tensorflow.paths import MODELS_DIR as tensorflow_model_dir
+
+  # run evaluation
+  for model_dir in [pytorch_model_dir, tensorflow_model_dir]:
+
+    # for each model in model dir
+    for model_path in list(model_dir.glob('*.tflite')):
+
+      # info
+      print("\nEvaluate: ", model_path)
+
+      # run evaluation
+      model_evaluation(datamodule_test, model_path)

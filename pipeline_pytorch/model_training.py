@@ -116,23 +116,25 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   print("Testing of model finished!")
 
 
-def pytorch_model_taining(cfg, datamodule_train, datamodule_validation, datamodule_test):
+def pytorch_model_taining(cfg_framework, datamodule_train, datamodule_validation, datamodule_test):
   
   # dataloader
-  dataloader_train = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_train), **cfg['dataloader_train_kwargs'])
-  dataloader_validation = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_validation), **cfg['dataloader_validation_and_test_kwargs'])
-  dataloader_test = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_test), **cfg['dataloader_validation_and_test_kwargs'])
+  dataloader_train = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_train), **cfg_framework['dataloader_train_kwargs'])
+  dataloader_validation = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_validation), **cfg_framework['dataloader_validation_and_test_kwargs'])
+  dataloader_test = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_test), **cfg_framework['dataloader_validation_and_test_kwargs'])
 
   # model
   input_shape = datamodule_train.get_feature_shape_at_load()
-  #model = Baseline(cfg['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()))
-  model = Baseline(cfg['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()), save_path=str(MODELS_DIR))
+  #model = Baseline(cfg_framework['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()))
+  model = Baseline(cfg_framework['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()), save_path=str(MODELS_DIR))
 
   # summary
   summary(model, input_size=input_shape, device=model.get_device_type_str())
 
   # run model training
-  run_model_training(cfg, model, dataloader_train, dataloader_validation, label_dict=datamodule_train.get_label_dict())
+  run_model_training(cfg_framework, model, dataloader_train, dataloader_validation, label_dict=datamodule_train.get_label_dict())
 
   # run model testing
-  run_model_testing(cfg, model, dataloader_test, label_dict=datamodule_test.get_label_dict())
+  run_model_testing(cfg_framework, model, dataloader_test, label_dict=datamodule_test.get_label_dict())
+
+  return model
