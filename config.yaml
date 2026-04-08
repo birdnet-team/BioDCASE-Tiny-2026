@@ -116,13 +116,6 @@ tensorflow_framework:
       patience: 100
 
 
-# reports
-reports:
-
-  # report path
-  report_path: './output/04_reports'
-
-
 # generate embedded code
 generate_embedded_code:
 

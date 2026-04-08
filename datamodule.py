@@ -109,6 +109,7 @@ class DatamoduleTinyMl():
         'transpose_features_extracted': True,
         'normalize_features': True,
         'to_float': True,
+        'to_torch': True,
         'add_channel_dimension': True,
         'add_batch_dimension': False,
         'channel_dimension_at_end': False,

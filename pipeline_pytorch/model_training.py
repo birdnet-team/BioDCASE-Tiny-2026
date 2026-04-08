@@ -54,6 +54,9 @@ def run_model_training(cfg, model, dataloader_train, dataloader_validation, labe
       # validation step
       y_pred, loss = model.validation_step(data)
 
+      # argmax for acc
+      y_pred = np.argmax(y_pred, axis=-1)
+
       # append targets and predictions
       y_targets = np.append(y_targets, data[1].numpy().astype(np.int8))
       y_predictions = np.append(y_predictions, y_pred.astype(np.int8))
@@ -92,6 +95,9 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
     # validation step
     y_pred = model.predict(data[0])
 
+    # argmax for acc
+    y_pred = np.argmax(y_pred, axis=-1)
+
     # add data
     y_predictions.extend(y_pred.tolist())
     y_targets.extend(data[1].tolist())
@@ -100,9 +106,6 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   acc = np.mean(np.array(y_predictions) == np.array(y_targets)).item()
 
   # report path
-  #report_path = Path(cfg['reports']['report_path'])
-  #if not report_path.is_dir(): report_path.mkdir(parents=True)
-  #plot_path_cm = report_path / 'cm_{}.png'.format(model.get_model_name())
   plot_path_cm = CM_FIG_PATH.parent / 'cm_{}.png'.format(model.get_model_name())
 
   # confusion matrix

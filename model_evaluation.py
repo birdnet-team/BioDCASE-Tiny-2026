@@ -75,8 +75,8 @@ def model_evaluation(datamodule_test, tflitepath):
             multi_class="ovr",   # important for multiclass
             average="macro")
   
-  print('Top-1 accuracy: ', top1_accuracy_sklearn(y_pred, y_true))
-  print('Area under ROC curve: ', auc)
+  print('Top-1 accuracy: {:.4f}'.format(top1_accuracy_sklearn(y_pred, y_true)))
+  print('Area under ROC curve: {:.4f}'.format(auc))
 
   print('Completed evaluations for model save in ', tflitepath)
    

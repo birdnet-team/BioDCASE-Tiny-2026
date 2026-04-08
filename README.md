@@ -96,7 +96,7 @@ source .venv/bin/activate
 
 4. Install Python dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_<pytorch|tensorflow>.txt
 ```
 
 5. Install Docker on your system ([link](https://www.docker.com/get-started/)). Afterwards you have to activate the docker deamon and add it to your user group. On linux it looks something like:

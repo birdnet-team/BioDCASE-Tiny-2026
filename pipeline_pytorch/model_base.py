@@ -156,10 +156,10 @@ class ModelBase(torch.nn.Module):
       # loss
       loss = self.criterion(y_hat, y)
 
-      # prediction - argmax
-      y_pred = torch.argmax(y_hat, axis=-1).cpu().numpy()
+      # post processing
+      y_hat = self.prediction_post_processing(y_hat)
 
-    return y_pred, loss.item()
+    return y_hat, loss.item()
 
 
   def predict(self, x):
@@ -182,10 +182,24 @@ class ModelBase(torch.nn.Module):
       # forward 
       y_hat = self.forward(x)
 
-      # prediction - argmax
-      y_pred = torch.argmax(y_hat, axis=-1).cpu().numpy()
+      # post processing
+      y_hat = self.prediction_post_processing(y_hat)
 
-    return y_pred
+    return y_hat
+
+
+  def prediction_post_processing(self, y_hat):
+    """
+    prediction post processing
+    """
+    
+    # prediction - argmax
+    #y_hat = torch.argmax(y_hat, axis=-1)
+
+    # to cpu and numpy
+    y_hat = y_hat.cpu().numpy()
+
+    return y_hat
 
 
   def save(self, save_also_as_tflite=False):

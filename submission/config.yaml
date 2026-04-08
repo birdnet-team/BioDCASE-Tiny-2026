@@ -15,7 +15,7 @@ inference_handler:
   model_dir: './your_submission_model'
   saved_model_extension: '.pth'
   label_dict_yaml_path: './your_submission_model/label_dict.yaml'
-  use_argmax_after_model_predict: False
+  use_argmax_after_model_predict: True
 
   # feature handler
   feature_handler:
@@ -57,7 +57,7 @@ inference_handler_pytorch:
   model_dir: './your_submission_model'
   saved_model_extension: '.pth'
   label_dict_yaml_path: './your_submission_model/label_dict.yaml'
-  use_argmax_after_model_predict: False
+  use_argmax_after_model_predict: True
 
   # feature handler
   feature_handler:

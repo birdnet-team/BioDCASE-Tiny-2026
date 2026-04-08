@@ -83,6 +83,8 @@ Development_Set/
 
 > <font color="red">**Note:**</font> <br>
 > The dataset will be available for download on Zenodo soon!
+
+The dataset can be downloaded from [Zenodo](https://zenodo.org/records/19453065)
  
 # Evaluation and Baseline System
 
