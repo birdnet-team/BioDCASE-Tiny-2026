@@ -129,7 +129,7 @@ class DatamoduleTinyMl():
         'root_path': './output/02_features',
         'cache_id': 'cache0',
         'filter_files': {'is_used': False, 're_contains': '.*'},
-        'file_naming': {'target_file_ext': '.npz', 'method': 'parent_folder_to_filename'},
+        'file_naming': {'target_file_ext': '.npz', 'method': 'keeping_parent_folder'},
         'compress': True,
         },
       'load_cache': {
@@ -138,9 +138,9 @@ class DatamoduleTinyMl():
         },
 
       # folder structure
-      'train_folder': 'train',
-      'validation_folder': 'validation',
-      'test_folder': 'test',
+      'train_folder': 'Train',
+      'validation_folder': 'Validation',
+      'test_folder': 'Validation',
 
       # load set
       'load_set_on_init': None,
@@ -346,6 +346,7 @@ class DatamoduleTinyMl():
     """
     train datraset loading, overwrite
     """
+    self.check_if_folder_exists_in_root_path_non_recursive(self.cfg['train_folder'])
     self.load_cache(additional_file_filter_cfg={'is_used': True, 're_contains': self.cfg['train_folder']})
 
 
@@ -353,6 +354,7 @@ class DatamoduleTinyMl():
     """
     train datraset loading, overwrite
     """
+    self.check_if_folder_exists_in_root_path_non_recursive(self.cfg['validation_folder'])
     self.load_cache(additional_file_filter_cfg={'is_used': True, 're_contains': self.cfg['validation_folder']})
 
 
@@ -360,7 +362,20 @@ class DatamoduleTinyMl():
     """
     train datraset loading, overwrite
     """
+    self.check_if_folder_exists_in_root_path_non_recursive(self.cfg['test_folder'])
     self.load_cache(additional_file_filter_cfg={'is_used': True, 're_contains': self.cfg['test_folder']})
+
+
+  def check_if_folder_exists_in_root_path_non_recursive(self, folder_name):
+    """
+    check folder existance in root path
+    """
+
+    # root directories
+    root_dirs = [path_dir.name for path_dir in sorted(self.dataset_path.iterdir()) if path_dir.is_dir()]
+
+    # assert existance
+    assert folder_name in root_dirs, "Your root path should include a folder with name: '{}' (change folder in config.yaml), actual folders: {}".format(folder_name, root_dirs)
 
 
   def file_naming_by_config(self, cfg_file_naming, input_file, target_path, file_root_dir, file_name_addon='', overwrite_file_ext=None):
@@ -374,17 +389,17 @@ class DatamoduleTinyMl():
     # simply name after file and ignore folders
     if cfg_file_naming['method'] == 'just_filename': return target_path / base_name
 
-    # root substraction
-    re_root_substraction = re.sub(r'\./', '', str(Path(file_root_dir))) + '/'
+    # root subtraction
+    re_root_subtraction = re.sub(r'\./', '', str(Path(file_root_dir))) + '/'
 
-    # substract root path
-    file_path_substracted_root = Path(re.sub(re_root_substraction, '', str(input_file)))
+    # subtract root path
+    file_path_subtracted_root = Path(re.sub(re_root_subtraction, '', str(input_file)))
 
     # keep parent folder
     if cfg_file_naming['method'] == 'keeping_parent_folder':
 
       # target path
-      target_path /= file_path_substracted_root.parent
+      target_path /= file_path_subtracted_root.parent
 
       # create folder if it does not exist
       if not target_path.is_dir(): target_path.mkdir(parents=True)
@@ -397,7 +412,7 @@ class DatamoduleTinyMl():
     if cfg_file_naming['method'] == 'parent_folder_to_filename': pass
 
     # parent paths
-    parent_path_names = re.sub(r'\.', '', str(file_path_substracted_root.parent))
+    parent_path_names = re.sub(r'\.', '', str(file_path_subtracted_root.parent))
     parent_path_names = re.sub(r'/', '.', parent_path_names)
     parent_path_names += '.' if len(parent_path_names)  else ''
 

@@ -53,7 +53,7 @@ datamodule:
     root_path: './output/02_features'
     cache_id: 'cache0'
     filter_files: {'is_used': False, 're_contains': '.*'}
-    file_naming: {'target_file_ext': '.npz', 'method': 'parent_folder_to_filename'}
+    file_naming: {'target_file_ext': '.npz', 'method': 'keeping_parent_folder'}
     compress: True
 
   # load cache
@@ -62,9 +62,9 @@ datamodule:
     filter_files: {'is_used': False, 're_contains': '.*'}
 
   # folder structure, splits
-  train_folder: 'train'
-  validation_folder: 'val'
-  test_folder: 'test'
+  train_folder: 'Train'
+  validation_folder: 'Validation'
+  test_folder: 'Validation'
 
   # load set on init, must be either 'train', 'validation', 'test'
   load_set_on_init: Null
@@ -74,7 +74,6 @@ datamodule:
   redo_intermediate: False
   redo_cache: False
   verbose: False
-  to_torch: True
 
 
 # --
