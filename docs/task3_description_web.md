@@ -103,9 +103,18 @@ A baseline system is provided in the GitHub repository, including a complete pip
 The competition focuses on the provided 10-bird species dataset. External data use may be regulated according to the [official competition rules](https://biodcase.github.io/challenge2026/rules)
 
 # Rules and Submissions
+Please follow the "Rules and Submission" guidlines described in the [baseline repository](https://github.com/birdnet-team/BioDCASE-Tiny-2026).
+Generally, you will have to submit a .zip file that contains:
+1. Inference model
+2. (optional) .tflite model
+3. (alternative) Feature extraction algorithm that does not follow the baseline algorithm
+4. A YAML metadata file describing details of your submission
+5. Technical report
 
-> <font color="red">**Note:**</font> <br>
-> The submission rules are still in development but will be available in time, so stay up to date!
+Your solution will be evaluated on a hidden test set and the scores will be presented in the upcoming results section of the biodcase website.
+
+<!-- > <font color="red">**Note:**</font> <br>
+> The submission rules are still in development but will be available in time, so stay up to date! -->
 
 <!-- 1. Solutions must be deployable on the ESP32-S3-Korvo-2 development board
 2. Models must process audio from the onboard microphone array in real-time
@@ -142,14 +151,13 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
 
 ```bibtex
 @misc{biodcase_tiny_2026_repo,
-  author = {Carmantini, Giovanni and Walter, Christian and Benhamadi, Yasmine and Seidel, Tom and Kahl, Stefan},
+  author = {Walter, Christian and Benhamadi, Yasmine and Seidel, Tom and Carmantini, Giovanni and Kahl, Stefan},
   title = {BioDCASE-Tiny 2026: A Framework for Bird Species Recognition on Resource-Constrained Hardware},
   year = {2026},
-  institution = {Cornell University and Chemnitz University of Technology},
   type = {Software},
   publisher = {GitHub},
   journal = {GitHub Repository},
-  howpublished = {\url{https://github.com/birdnet-team/BioDCASE-Tiny-2026}}
+  howpublished = {\url{https://github.com/birdnet-team/BioDCASE-Tiny-2026}},
 }
 ```
 
@@ -157,7 +165,7 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
 
 ```bibtex
 @dataset{biodcase_tiny_2026_dataset,
-  author = {tba},
+  author = {Kahl, Stefan, and Martin, Ralph},
   title = {BioDCASE 2026 Task 3: Bioacoustics for Tiny Hardware Development Set},
   year = {2026},
   publisher = {Zenodo},
@@ -168,4 +176,4 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
 
 # Support
 
-If you have questions please use the [BioDCASE Google Groups community forum](https://groups.google.com/g/biodcase-community) or create an issue in the Github baseline repo: [BioDCASE-Tiny 2026 Baseline System](https://github.com/birdnet-team/BioDCASE-Tiny-2026)
+If you have questions, please use the [BioDCASE Google Groups community forum](https://groups.google.com/g/biodcase-community) or create an issue in the Github baseline repo: [BioDCASE-Tiny 2026 Baseline System](https://github.com/birdnet-team/BioDCASE-Tiny-2026).
