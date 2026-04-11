@@ -24,13 +24,6 @@ The goal of the **Bioacoustics on Tiny Hardware** task is to develop an automati
 > <font color="red">**!!!Attention!!!**</font> <br>
 > We are still updating this content, so please stay up to date!
 
-
-<hr>
-
-The evaluation set:
-
-<div class="brepository-item" data-item="biodcase2026-task3-eval"></div>
-
 # Description 
 
 The next generation of autonomous recording units contains programmable chips, thus offering the opportunity the opportunity to perform BioDCASE tasks. On-device processing has multiple advantages, such as high durability, low latency, and privacy preservation. However, such “tiny hardware” is limited in terms of memory and compute, which calls for the development of original methods in audio content analysis.
@@ -79,12 +72,10 @@ Development_Set/
 │   ├── species_2/
 ```
 
+The dataset is available for download on [Zenodo](https://zenodo.org/records/19453065)
+
 <div class="brepository-item" data-item="biodcase2026-task3"></div>
 
-> <font color="red">**Note:**</font> <br>
-> The dataset will be available for download on Zenodo soon!
-
-The dataset can be downloaded from [Zenodo](https://zenodo.org/records/19453065)
  
 # Evaluation and Baseline System
 
@@ -147,17 +138,14 @@ A complete YAML metadata file with submission details should be provided. Here i
 
 If you use the BioDCASE-Tiny framework or dataset in your research, please cite the following:
 
-> <font color="red">**Note:**</font> <br>
-> Still to be anounced!
-
-<!-- ### Framework Citation
+### Framework Citation
 
 ```bibtex
 @misc{biodcase_tiny_2026_repo,
-  author = {tba},
-  title = {tba},
+  author = {Carmantini, Giovanni and Walter, Christian and Benhamadi, Yasmine and Seidel, Tom and Kahl, Stefan},
+  title = {BioDCASE-Tiny 2026: A Framework for Bird Species Recognition on Resource-Constrained Hardware},
   year = {2026},
-  institution = {tba},
+  institution = {Cornell University and Chemnitz University of Technology},
   type = {Software},
   publisher = {GitHub},
   journal = {GitHub Repository},
@@ -173,10 +161,10 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
   title = {BioDCASE 2026 Task 3: Bioacoustics for Tiny Hardware Development Set},
   year = {2026},
   publisher = {Zenodo},
-  doi = {tba},
-  url = {tba}
+  doi = {10.5281/zenodo.19453065},
+  url = {https://doi.org/10.5281/zenodo.19453065}
 }
-``` -->
+```
 
 # Support
 
