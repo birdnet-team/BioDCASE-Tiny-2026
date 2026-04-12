@@ -1,7 +1,6 @@
 # --
 # feature handler
 
-import torch
 import numpy as np
 import functools
 from biodcase_tiny.feature_extraction.feature_extraction import process_window, make_constants
@@ -50,7 +49,6 @@ class FeatureHandler():
       'transpose_features_extracted': True,
       'normalize_features': True,
       'to_float': True,
-      'to_torch': True,
       'add_channel_dimension': True,
       'add_batch_dimension': False,
       'channel_dimension_at_end': False,
@@ -129,9 +127,6 @@ class FeatureHandler():
 
     # normalize [0, 1]
     if self.cfg['normalize_features']: x_t = (x_t - np.min(x_t)) / np.ptp(x_t)
-
-    # to torch
-    if self.cfg['to_torch']: x_t = torch.from_numpy(x_t)
 
     return x_t
 

@@ -34,7 +34,6 @@ inference_handler:
       transpose_features_extracted: True
       normalize_features: True
       to_float: True
-      to_torch: True
       add_channel_dimension: True
       add_batch_dimension: True
       channel_dimension_at_end: False
@@ -76,7 +75,6 @@ inference_handler_pytorch:
       transpose_features_extracted: True
       normalize_features: True
       to_float: True
-      to_torch: True
       add_channel_dimension: True
       add_batch_dimension: True
       channel_dimension_at_end: False
@@ -118,7 +116,6 @@ inference_handler_tensorflow:
       transpose_features_extracted: True
       normalize_features: True
       to_float: True
-      to_torch: False
       add_channel_dimension: True
       add_batch_dimension: True
       channel_dimension_at_end: True

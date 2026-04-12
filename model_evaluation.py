@@ -53,7 +53,6 @@ def run_model_pytorch(cfg, datamodule_test, model_path):
   """
   run pytorch model
   """
-  import torch
 
   # model class
   model_class = getattr(importlib.import_module(cfg['pytorch_framework']['model']['module']), cfg['pytorch_framework']['model']['attr'])
@@ -68,7 +67,7 @@ def run_model_pytorch(cfg, datamodule_test, model_path):
   model.load(model_path)
 
   # do prediction
-  return model.predict(torch.from_numpy(datamodule_test.features))
+  return model.predict(datamodule_test.features)
 
 
 def run_model_tensorflow(cfg, datamodule_test, model_path):

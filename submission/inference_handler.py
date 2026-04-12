@@ -2,7 +2,6 @@
 # inference handler
 
 import yaml
-import torch
 import numpy as np
 import sys
 import importlib
@@ -73,7 +72,6 @@ class InferenceHandler():
           'transpose_features_extracted': True,
           'normalize_features': True,
           'to_float': True,
-          'to_torch': True,
           'add_channel_dimension': True,
           'add_batch_dimension': True,
           'channel_dimension_at_end': False,

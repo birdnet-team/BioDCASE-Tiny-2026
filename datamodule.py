@@ -109,7 +109,6 @@ class DatamoduleTinyMl():
         'transpose_features_extracted': True,
         'normalize_features': True,
         'to_float': True,
-        'to_torch': True,
         'add_channel_dimension': True,
         'add_batch_dimension': False,
         'channel_dimension_at_end': False,
@@ -609,51 +608,45 @@ if __name__ == '__main__':
   datamodule tiny ml
   """
 
-  import torch
   from plots import plot_waveform_and_features
 
   # yaml config file
   cfg = yaml.safe_load(open("./config.yaml"))
 
   # datamodule
-  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo_all=False, redo_cache=False, load_set_on_init='train')
+  datamodule = DatamoduleTinyMl(cfg['datamodule'], redo_all=False, redo_cache=False, load_set_on_init='validation')
   datamodule.info()
-
-  # loader TODO
-  dataloader = torch.utils.data.DataLoader(datamodule, **{'batch_size': 4, 'shuffle': True})
 
   # get label dict
   target_to_label_dict = datamodule.get_target_to_label_dict()
 
-  # show some examples
-  for data_batch in dataloader:
+  # show plot flag
+  show_plot_flag = True
 
-    # batch 
-    for data in zip(*data_batch):
+  # pick random indices
+  random_sammple_indices = np.random.randint(low=0, high=len(datamodule) - 1, size=5)
 
-      # extract components
-      x, y, sid = data
+  # go through random samples
+  for random_sammple_index in random_sammple_indices:
 
-      # extract waveform and features
-      waveform, fs = datamodule.get_raw_waveform_and_fs_by_single_sid(sid)
-      features = x[0]
-      file_name = datamodule.get_file_name_id_by_single_sid(sid)
+    # extract components
+    x, y, sid = datamodule[random_sammple_index]
 
-      # show plot flag
-      show_plot_flag = True
+    # extract waveform and features
+    waveform, fs = datamodule.get_raw_waveform_and_fs_by_single_sid(sid)
+    features = x[0]
+    file_name = datamodule.get_file_name_id_by_single_sid(sid)
 
-      # play sound
-      if show_plot_flag: datamodule.play_sound_by_single_sid(sid)
+    # play sound
+    if show_plot_flag: datamodule.play_sound_by_single_sid(sid)
 
-      # some prints
-      print("file_name: ", file_name)
-      print("feature shape: ", x.shape)
-      print("feature type: ", x.dtype)
-      print("sample ids: ", sid)
-      print("targets: ", y)
-      print("label: ", target_to_label_dict[int(y)])
+    # some prints
+    print("file_name: ", file_name)
+    print("feature shape: ", x.shape)
+    print("feature type: ", x.dtype)
+    print("sample id: ", sid)
+    print("targets: ", y)
+    print("label: ", target_to_label_dict[int(y)])
 
-      # plot waveform and features
-      plot_waveform_and_features(waveform, features, show_plot_flag=show_plot_flag, title=file_name, fs=fs, spec_fs=datamodule.get_cache_info_spec_fs())
-
-    break
+    # plot waveform and features
+    plot_waveform_and_features(waveform, features, show_plot_flag=show_plot_flag, title=file_name, fs=fs, spec_fs=datamodule.get_cache_info_spec_fs())
