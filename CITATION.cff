@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Walter"
+  given-names: "Christian"
+  orcid: "https://orcid.org/0009-0007-7224-9920"
+- family-names: "Benhamadi"
+  given-names: "Yasmine"
+- family-names: "Seidel"
+  given-names: "Tom"
+- family-names: "Carmantini"
+  given-names: "Giovanni"
+- family-names: "Kahl"
+  given-names: "Stefan"
+title: "BioDCASE-Tiny 2026: A Framework for Bird Species Recognition on Resource-Constrained Hardware"
+version: 1.0
+date-released: 2026-04-13
+url: "https://github.com/birdnet-team/BioDCASE-Tiny-2026"
