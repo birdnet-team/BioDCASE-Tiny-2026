@@ -2,7 +2,7 @@
 # config for biodcase 2026 - tiny ml (task 3)
 
 # version id
-version: 0.2
+version: 1.0
 
 # skip deployment - useful for model testing only
 skip_deployment_flag: False
@@ -30,7 +30,6 @@ datamodule:
     transpose_features_extracted: True
     normalize_features: True
     to_float: True
-    to_torch: True
     add_channel_dimension: True
     add_batch_dimension: False
     channel_dimension_at_end: False
