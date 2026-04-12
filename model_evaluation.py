@@ -1,25 +1,101 @@
+# --
+# model evaluation
+
 import re
 import yaml
 import numpy as np
+import importlib
+
 from pathlib import Path
+from scipy.special import softmax
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 from datamodule import DatamoduleTinyMl
 from ai_edge_litert.interpreter import Interpreter
 
-from scipy.special import softmax
-from sklearn.metrics import accuracy_score, roc_auc_score
-
-# TODO fix data methods
 
 def top1_accuracy_sklearn(y_pred, y_true):
-    y_pred = np.array(y_pred)
-    y_true = np.array(y_true)
+  """
+  top1 accuracy
+  """
 
-    pred_classes = np.argmax(y_pred, axis=1)
+  # to numpy
+  y_pred = np.array(y_pred)
+  y_true = np.array(y_true)
 
-    return accuracy_score(y_true, pred_classes)
+  # argmax
+  pred_classes = np.argmax(y_pred, axis=1)
 
-def run_model(input_data, model_path):
+  # score
+  return accuracy_score(y_true, pred_classes)
+
+
+def run_model_main(cfg, datamodule_test, model_path):
+  """
+  run model depending on suffix
+  """
+
+  # make sure its a path
+  model_path = Path(model_path)
+
+  # start
+  if model_path.suffix == '.pth': return run_model_pytorch(cfg, datamodule_test, model_path)
+  if model_path.suffix == '.keras': return run_model_tensorflow(cfg, datamodule_test, model_path)
+  if model_path.suffix == '.tflite': return run_model_tflite(cfg, datamodule_test, model_path)
+
+  # could not find suffix
+  print("***Model evaluation at path: {} could not be executed due to not specified suffix: {}".format(model_path, model_path.suffix))
+
+  return None
+
+
+def run_model_pytorch(cfg, datamodule_test, model_path):
+  """
+  run pytorch model
+  """
+  import torch
+
+  # model class
+  model_class = getattr(importlib.import_module(cfg['pytorch_framework']['model']['module']), cfg['pytorch_framework']['model']['attr'])
+
+  # model kwargs
+  model_kwargs_overwrite = {'input_shape': datamodule_test.get_feature_shape_at_load(), 'num_classes': len(datamodule_test.get_label_dict()), 'is_inference_model': True}
+
+  # model
+  model = model_class(*cfg['pytorch_framework']['model']['args'], **{**cfg['pytorch_framework']['model']['kwargs'], **model_kwargs_overwrite})
+
+  # load model weights
+  model.load(model_path)
+
+  # do prediction
+  return model.predict(torch.from_numpy(datamodule_test.features))
+
+
+def run_model_tensorflow(cfg, datamodule_test, model_path):
+  """
+  run tensorflow model
+  """
+  import keras
+
+  # model instance
+  model = keras.models.load_model(model_path)
+
+  # channel dim at end
+  features = np.transpose(datamodule_test.features, (0, 2, 3, 1))
+
+  # do prediction
+  return model.predict(features)
+
+
+def run_model_tflite(cfg, datamodule_test, model_path):
+  """
+  run tflite model
+  """
+
+  # input data
+  input_data = datamodule_test.features
+
+  # tflite interpreter
   interpreter = Interpreter(model_path=str(model_path))
   interpreter.allocate_tensors()
 
@@ -63,25 +139,39 @@ def run_model(input_data, model_path):
   return np.array(y_preds)
 
 
-def model_evaluation(datamodule_test, tflitepath):
+def model_evaluation(cfg, datamodule_test, model_path):
+  """
+  model evaluation
+  """
   
   # get features and targets
-  X_test, y_true = datamodule_test.features, datamodule_test.targets
+  #X_test, y_true = datamodule_test.features, datamodule_test.targets
+  y_true = datamodule_test.targets
   
-  y_pred = run_model(X_test, tflitepath)
+  # run model
+  y_pred = run_model_main(cfg, datamodule_test, model_path)
+
+  # skip -> model could not be executed
+  if y_pred is None: return
+
+  # softmax
   y_prob = softmax(y_pred, axis=1)
 
+  # auc score
   auc = roc_auc_score(y_true, y_prob,
             multi_class="ovr",   # important for multiclass
             average="macro")
   
+  # prints
   print('Top-1 accuracy: {:.4f}'.format(top1_accuracy_sklearn(y_pred, y_true)))
   print('Area under ROC curve: {:.4f}'.format(auc))
-
-  print('Completed evaluations for model save in ', tflitepath)
+  print('Completed evaluations for model saved in ', model_path)
    
 
 if __name__ == '__main__':
+  """
+  model evaluation
+  """
 
   # yaml config file
   cfg = yaml.safe_load(open('./config.yaml'))
@@ -93,14 +183,20 @@ if __name__ == '__main__':
   from pipeline_pytorch.paths import MODELS_DIR as pytorch_model_dir
   from pipeline_tensorflow.paths import MODELS_DIR as tensorflow_model_dir
 
+  # supported suffixes
+  supported_suffixes = ['.tflite', '.pth', '.keras']
+
+  # get all 
+  f_find_all_model_files = lambda model_dir, supported_suffixes: [model_file for model_files in [list(model_dir.glob('*{}'.format(s))) for s in supported_suffixes] for model_file in model_files]
+
   # run evaluation
   for model_dir in [pytorch_model_dir, tensorflow_model_dir]:
 
     # for each model in model dir
-    for model_path in list(model_dir.glob('*.tflite')):
+    for model_path in f_find_all_model_files(model_dir, supported_suffixes):
 
       # info
       print("\nEvaluate: ", model_path)
 
       # run evaluation
-      model_evaluation(datamodule_test, model_path)
+      model_evaluation(cfg, datamodule_test, model_path)

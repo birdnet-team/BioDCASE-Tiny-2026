@@ -1,7 +1,12 @@
+# --
+# model training
+
 import sys
 import yaml
 import torch
 import numpy as np
+import importlib
+
 from torchsummary import summary
 from pathlib import Path
 
@@ -116,10 +121,13 @@ def run_model_testing(cfg, model, dataloader_test, label_dict):
   print("Confusion matrix is saved in [{}]".format(plot_path_cm))
 
   # info
-  print("Testing of model finished!")
+  print("Testing of model finished!\n")
 
 
 def pytorch_model_taining(cfg_framework, datamodule_train, datamodule_validation, datamodule_test):
+  """
+  pytorch model training
+  """
   
   # dataloader
   dataloader_train = torch.utils.data.DataLoader(DataloaderPytorch(datamodule_train), **cfg_framework['dataloader_train_kwargs'])
@@ -128,8 +136,15 @@ def pytorch_model_taining(cfg_framework, datamodule_train, datamodule_validation
 
   # model
   input_shape = datamodule_train.get_feature_shape_at_load()
-  #model = Baseline(cfg_framework['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()))
-  model = Baseline(cfg_framework['model'], input_shape=input_shape, num_classes=len(datamodule_train.get_label_dict()), save_path=str(MODELS_DIR))
+  
+  # model class
+  model_class = getattr(importlib.import_module(cfg_framework['model']['module']), cfg_framework['model']['attr'])
+
+  # model kwargs
+  model_kwargs_overwrite = {'input_shape': input_shape, 'num_classes': len(datamodule_train.get_label_dict()), 'save_path': str(MODELS_DIR)}
+
+  # model
+  model = model_class(*cfg_framework['model']['args'], **{**cfg_framework['model']['kwargs'], **model_kwargs_overwrite})
 
   # summary
   summary(model, input_size=input_shape, device=model.get_device_type_str())

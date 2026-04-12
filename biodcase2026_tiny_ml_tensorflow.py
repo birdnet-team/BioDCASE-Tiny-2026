@@ -41,7 +41,7 @@ if __name__ == '__main__':
   # quantize
   if cfg['generate_embedded_code']['quantize']:
     print("Model evaluation before quantization: ")
-    model_evaluation(datamodule_test, TFLITE_MODEL_PATH)
+    model_evaluation(cfg, datamodule_test, TFLITE_MODEL_PATH)
 
     # TODO fix overwritten file (add quantization path)
     print("Model quantization (model will be overwritten!) ")
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     print("Model evaluation after quantization: ")
   
   # evaluation .tflite model  
-  model_evaluation(datamodule_test, TFLITE_MODEL_PATH)
+  model_evaluation(cfg, datamodule_test, TFLITE_MODEL_PATH)
 
   # skip deployment?
   if cfg['skip_deployment_flag']:

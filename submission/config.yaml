@@ -120,8 +120,8 @@ inference_handler_tensorflow:
       to_float: True
       to_torch: False
       add_channel_dimension: True
-      add_batch_dimension: False
-      channel_dimension_at_end: False
+      add_batch_dimension: True
+      channel_dimension_at_end: True
 
   # model
   model:
