@@ -25,13 +25,14 @@ from plots import plot_confusion_matrix
 
 
 class ModelTraining(BaseModel):
-    class EarlyStopping(BaseModel):
-        patience: int
-    seed: int
-    n_epochs: int
-    shuffle_buff_n: int
-    batch_size: int
-    early_stopping: EarlyStopping
+  class EarlyStopping(BaseModel):
+    patience: int
+  seed: int
+  n_epochs: int
+  shuffle_buff_n: int
+  batch_size: int
+  early_stopping: EarlyStopping
+
 
 def set_seeds(seed):
   """
@@ -39,6 +40,7 @@ def set_seeds(seed):
   """
   tf.config.experimental.enable_op_determinism()
   keras.utils.set_random_seed(seed)
+
 
 def get_class_weight(train_labels):
   """
@@ -50,27 +52,35 @@ def get_class_weight(train_labels):
   class_weight = {k: tot_counts / v for k, v in l_counts.items()}
   return class_weight
 
+
 def tf_dataset(datamodule, features_shape, shuffle, buffer_size=None, seed=None, batch_size=None):
+  """
+  tensorflow dataset
+  """
     
-    # features: shape (tf backend): batches, rows, cols, channels
-    features = datamodule.features.reshape(-1, *features_shape)
+  # features: shape (tf backend): batches, rows, cols, channels
+  features = datamodule.features.reshape(-1, *features_shape)
 
-    # one hot labels
-    one_hot_labels = to_categorical(datamodule.targets)
+  # one hot labels
+  one_hot_labels = to_categorical(datamodule.targets)
 
-    # dataset
-    dataset = tf.data.Dataset.from_tensor_slices((features, one_hot_labels))
-    if shuffle:
-      dataset = dataset.shuffle(
-          buffer_size=buffer_size,
-          seed=seed,
-          reshuffle_each_iteration=True
-      )
+  # dataset
+  dataset = tf.data.Dataset.from_tensor_slices((features, one_hot_labels))
 
-    dataset = dataset.batch(batch_size)
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+  # shuffle
+  if shuffle:
+    dataset = dataset.shuffle(
+      buffer_size=buffer_size,
+      seed=seed,
+      reshuffle_each_iteration=True
+    )
 
-    return dataset
+  # batching
+  dataset = dataset.batch(batch_size)
+  dataset = dataset.prefetch(tf.data.AUTOTUNE)
+
+  return dataset
+
 
 def predict_validation(model: Model, val_dataset: tf.data.Dataset):
   """
@@ -81,7 +91,11 @@ def predict_validation(model: Model, val_dataset: tf.data.Dataset):
   y_pred = model.predict(val_ds)
   return y_true, y_pred
 
+
 def convert_model(keras_path, tflite_path):
+  """
+  convert model to .tflite
+  """
   # Code taken from students
   model = tf.keras.models.load_model(keras_path)
 
@@ -91,7 +105,8 @@ def convert_model(keras_path, tflite_path):
 
   # Save the converted model to a .tflite file
   with open(tflite_path, 'wb') as f:
-      f.write(tflite_model)
+    f.write(tflite_model)
+
 
 def run_model_training(cfg_tensorflow_training, datamodule_train, datamodule_validation):
   """
@@ -132,7 +147,6 @@ def run_model_training(cfg_tensorflow_training, datamodule_train, datamodule_val
 
   # class weights
   class_weight = get_class_weight(datamodule_train.targets)
-
 
   # model creation
   model = create_model(features_shape, num_output_classes=len(label_dict))

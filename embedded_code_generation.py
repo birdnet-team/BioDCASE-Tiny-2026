@@ -1,3 +1,6 @@
+# --
+# embedded code generation
+
 import sys
 from pathlib import Path
 
