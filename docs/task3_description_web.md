@@ -21,8 +21,6 @@ bsponsors_source:
 # About
 The goal of the **Bioacoustics on Tiny Hardware** task is to develop an automatic classifier of birdsong that complies with the resource constraints of low-cost and battery-powered autonomous recording units.
 
-> <font color="red">**!!!Attention!!!**</font> <br>
-> We are still updating this content, so please stay up to date!
 
 # Description 
 
@@ -40,20 +38,19 @@ In this context, task participants will revisit the well-known problem of automa
 </figure>
 <br>
 
-
-
 The primary challenge is striking the optimal balance between classification accuracy and resource usage. While conventional deep learning approaches might achieve high accuracy, they may not be feasible on embedded hardware. Participants must explore techniques such efficient architecture design, and optimized feature extraction to create a solution that performs well within the hardware constraints.
 
 A baseline implementation is provided as a starting point, which participants can modify and improve upon. Solutions will be evaluated based on classification performance, model size, inference time, and memory usage.
 
 **Note:** We encourage participants to buy the ESP32-S3-Korvo-2 development board to test their solutions. The board is available for purchase on various online platforms (e.g, at [DigiKey](https://www.digikey.de/de/products/detail/espressif-systems/ESP32-S3-KORVO-2/15822448)). However, the competition can be completed without the board, as the evaluation will be performed on a hidden test set using the baseline system by the organizers.
 
+
 # Dataset
 
 The dataset for this year's task uses field recordings from 10 bird species and an additional set of urban backround sounds from Germany:
 
 - 11 class labels categorized in folders
-- 3,300 recordings of 3 seconds each...
+- 2750 recordings of 3 seconds each...
 - audio is sampled at 24 kHz, mono, 16-bit PCM wav files
 
 The dataset is organized as follows:
@@ -79,11 +76,12 @@ The dataset is available for download on [Zenodo](https://zenodo.org/records/194
  
 # Evaluation and Baseline System
 
-We provide a baseline system that includes a complete pipeline for audio processing, feature extraction, model training, and deployment to the ESP32-S3-Korvo-2 development board. The baseline system is designed to be easily adaptable for participants to build upon.
+We provide a baseline system that includes a complete pipelines for audio processing, feature extraction, model training, and deployment to the ESP32-S3-Korvo-2 development board. 
+The baseline system is designed to be easily adaptable for participants to build upon.
 
 You can find the baseline system in the GitHub repository: [**BioDCASE-Tiny 2026 Baseline System**](https://github.com/birdnet-team/BioDCASE-Tiny-2026)
 
-Submissions will be evaluated based on both classification performance and resource efficiency:
+<!-- Submissions will be evaluated based on both classification performance and resource efficiency:
 
 ### Classification Performance
 - **Average precision**: The average value of precision across all recall levels from 0 to 1.
@@ -96,22 +94,26 @@ Submissions will be evaluated based on both classification performance and resou
 ### Ranking
 Participants will be ranked separately for each one of the evaluation criteria.
 
-A baseline system is provided in the GitHub repository, including a complete pipeline for audio processing, feature extraction, model training, and deployment to the ESP32-S3-Korvo-2 development board.
+A baseline system is provided in the GitHub repository, including a complete pipeline for audio processing, feature extraction, model training, and deployment to the ESP32-S3-Korvo-2 development board. -->
+
 
 # External Data Resources
 
-The competition focuses on the provided 10-bird species dataset. External data use may be regulated according to the [official competition rules](https://biodcase.github.io/challenge2026/rules)
+The competition focuses on the provided 10-bird species dataset. 
+External data use may be regulated according to the [official competition rules](https://biodcase.github.io/challenge2026/rules)
+
 
 # Rules and Submissions
-Please follow the "Rules and Submission" guidlines described in the [baseline repository](https://github.com/birdnet-team/BioDCASE-Tiny-2026).
-Generally, you will have to submit a .zip file that contains:
+Please follow the "Rules and Submission" section in the [baseline repository](https://github.com/birdnet-team/BioDCASE-Tiny-2026).
+Your solution will be evaluated on a hidden test set and the scores will be presented in the upcoming results section of the biodcase website!
+
+<!-- Generally, you will have to submit a .zip file that contains:
 1. Inference model
 2. (optional) .tflite model
 3. (alternative) Feature extraction algorithm that does not follow the baseline algorithm
 4. A YAML metadata file describing details of your submission
-5. Technical report
+5. Technical report -->
 
-Your solution will be evaluated on a hidden test set and the scores will be presented in the upcoming results section of the biodcase website.
 
 <!-- > <font color="red">**Note:**</font> <br>
 > The submission rules are still in development but will be available in time, so stay up to date! -->

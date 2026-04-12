@@ -1,26 +1,21 @@
 <div align="center">
   <picture>
-    <img src="docs/under_construction.png" alt="Under construction" width="200">
-  </picture>
-  <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/BioDCASE_header_light.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/BioDCASE_header_dark.svg">
     <img src="docs/BioDCASE_header_dark.svg" alt="BioDCASE Logo" width="600">
   </picture>
-  <picture>
-    <img src="docs/under_construction.png" alt="Under construction" width="200">
-  </picture>
   <br><br>
 </div>
 
-**BioDCASE-Tiny 2026 competition (Task 3)** - A machine learning competition for bird sound recognition on tiny hardware, also visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3) for additional information.
+**BioDCASE-Tiny 2026 competition (Task 3)** - A machine learning competition for bird sound recognition on tiny hardware.
 
 
 ## Background
 
 BioDCASE-Tiny is a competition for developing efficient machine learning models for bird audio recognition that can run on resource-constrained embedded devices.
 The project uses the ESP32-S3-Korvo-2 development board, which offers audio processing capabilities in a small form factor suitable for field deployment.
-This year we added a pytorch framework along the tensorflow framework from last year offering participants to choose between one of the two machine learning frameworks. 
+This year we added a pytorch framework along the tensorflow framework from last year offering participants to choose between one of the two machine learning frameworks.
+Please, also visit the [official BioDCASE 2026 Task 3 website](https://biodcase.github.io/challenge2026/task3) for additional information.
 
 
 ## Table of Contents
@@ -50,9 +45,9 @@ The dataset is available for download on [Zenodo](https://zenodo.org/records/194
 3. (optional) ESP32-S3-Korvo-2 development board and two USB cables (power and serial connection)
 
 > [!IMPORTANT]
-> You can also participate in the challenge if you do not want to buy a Korvo-2 dev board, but consider that you will not be able to check if your model is actually deployable on the korvo system.
+> You can also participate in the challenge if you do not want to buy a Korvo-2 dev board, but consider that you will not be able to check if your model is actually deployable on the Korvo system.
 > If the deployable model (`.tflite`) does not exist or isn't able to run on our system, you will be ranked lower in the competition.
-> We still recommend to buy the development board to get the full embedded feeling of this task.
+> We still recommend to buy the Korvo-2 dev board to get the full embedded experience of this task.
 
 ### Installation Steps
 
@@ -64,7 +59,7 @@ cd BioDCASE-Tiny-2026
 
 2. Install your favorite python version (as long as it is able to build the requirements, see prerequisities for working version).
 
-3. Create a virtual environment (recommended)
+3. Create a virtual environment (recommended) here with python version 3.13 as example:
 
 ```bash
 python3.13 -m venv .venv
@@ -76,7 +71,7 @@ source .venv/bin/activate
 pip install -r requirements_<pytorch|tensorflow>.txt
 ```
 
-5. Install [Docker](https://www.docker.com/get-started/) on your system. Afterwards you have to activate the docker deamon and add it to your user group. On linux (depends on your distribution) this could be achieved with:
+5. Install [Docker](https://www.docker.com/get-started/) on your system. Afterwards you have to activate the docker deamon and add it to your user group. On Linux (depends on your distribution) this can be achieved with:
 ```bash
 systemctl status docker.socket
 systemctl enable docker.socket
@@ -106,7 +101,7 @@ datamodule:
     root_path: ./output/02_features/
 ```
 
-2. (optional) Make sure to add rights to your usb device connecting to the korvo board. This depends a bit on the system, on linux, you have to add udev rules in `/etc/udev/rules.d/`, e.g. add a file  there `/etc/udev/rules.d/10-custom-usb.rules` with content:
+2. (optional) Make sure to add rights to your usb device connecting to the Korvo-2 dev board. This depends a bit on the system, on Linux, you have to add udev rules in `/etc/udev/rules.d/`, e.g. add a file  there `/etc/udev/rules.d/10-custom-usb.rules` with content:
 ```
 # ubuntu vs. arch: GROUP="dialout" vs. GROUP="uucp"
 # rule for esp32 (devkit-c or korvo)
@@ -118,7 +113,7 @@ sudo gpasswd -a <your_username> uucp
 sudo udevadm control --reload-rules
 ```
 
-3. (optional) Set your serial device port in the `config.yaml` for linux it is usually `/dev/ttyUSB0`
+3. (optional) Set your serial device port in the `config.yaml` for Linux it is usually `/dev/ttyUSB0`
 
 ```yaml
 generate_embedded_code:
@@ -145,7 +140,7 @@ sudo chmod a+rw $SERIAL_PORT
 
 ## Development
 
-- Modify `config.yaml` to change feature extraction or framework model parameters
+- Modify `config.yaml` to change feature extraction or model parameters.
 - Modify corresponding model files in either `pipeline_pytorch/` or `pipeline_tensorflow/` framework folders.
 
 > [!IMPORTANT]
@@ -165,14 +160,15 @@ python biodcase2026_tiny_ml_tensorflow.py
 ```
 
 This will run the data preprocessing, extraction of features, training of the model, and deployment on your development board.
-Once deployed, the benchmarking code on the ESP32-S3 will display information about the runtime performance of the preprocessing steps and the deployed model via serial monitor (over USB cable).
+Once deployed, the benchmark code on the ESP32-S3 will display information about the runtime performance of the preprocessing steps and the deployed model via serial monitor (over USB cable).
 
 ### Code Structure
 
 - `biodcase2026_tiny_ml__<pytorch|tensorflow>.py` - Main execution pipeline
-- `datamodule.py` - Datamodule for preprocessing, feature extraction, and data storing
-- `pipeline_pytorch/` - pytorch framework folder
-- `pipeline_tensorflow/` - tensorflow framework folder
+- `datamodule.py` - Datamodule for preprocessing, feature extraction, and data storage
+- `pipeline_pytorch/` - Pytorch framework folder
+- `pipeline_tensorflow/` - Tensorflow framework folder
+- `model_evaluation.py` - Evaluate models
 - `biodcase_tiny/embedded/firmware/main` - Firmware source code that will be copied and modified for the ESP target
 - `biodcase_tiny/embedded/esp_target.py` - ESP build target creation 
 - `biodcase_tiny/embedded/esp_toolchain.py` - ESP toolchain with Docker IDF to build, flash, and monitor
@@ -202,7 +198,7 @@ datamodule:
   redo_intermediate: False
   redo_cache: False
 ```
-or you change the ids or root path in
+or you change the ids in
 ```yaml
 datamodule:
     intermediate:
@@ -225,22 +221,66 @@ python datamodule.py
 The model training is started either by `biodcase2026_tiny_ml_pytorch.py` or `biodcase2026_tiny_ml_tensorflow.py` depending on your framework of choice.
 
 #### Pytorch Framework
-When choosing the pytorch framework, the model depending files are located in `./pipeline_pytorch`.
+When choosing the pytorch framework, the model files are located in `./pipeline_pytorch`.
 The model training process is managed in `model_training.py` where the training/validation steps are defined in `model_base.py` by the `ModelBase` class.
-You can customize the model architecture in `model_tiny_ml.py` and overwrite any function you wish to change.
+The model architecture can be customized in `model_tiny_ml.py` by overwriting any function you wish to change.
 You can also create a new model file, but make sure that your model class inherits `ModelBase` which is required for the submission process.
+To configure the model training change fields in `config.yaml` at:
+```yaml
+pytorch_framework:
+  dataloader_train_kwargs:
+    batch_size: 32
+    shuffle: true
+  dataloader_validation_and_test_kwargs:
+    batch_size: 32
+    shuffle: false
+  model:
+    module: pipeline_pytorch.model_tiny_ml
+    attr: Baseline
+    args: []
+    kwargs:
+      device:
+        use_cpu: False
+        device_name: 'cuda:0'
+      criterion: {'module': 'torch.nn', 'attr': 'CrossEntropyLoss', 'kwargs': {}}
+      optimizer: {'module': 'torch.optim', 'attr': 'Adam', 'kwargs': {'lr': 0.001, 'betas': [0.9, 0.999]}}
+      verbose: False
+  model_training:
+    num_epochs: 100
+```
+The dataloader kwargs are useful for setting the batch size in training.
+In the `model` entry, the `module` is the python package (or file), `attr` the function (in this case the model class), and `args` and `kwargs` are passed to this model class.
 
 #### Tensorflow Framework
-When choosing the pytorch framework, the model depending files are located in `./pipeline_tensorflow`.
+When choosing the pytorch framework, the model files are located in `./pipeline_tensorflow`.
 The model training process is managed in `model_training.py` where [Keras](https://keras.io/) model creation and training step is defined in `model.py`.
 This framework was adapted from previous year's [BioDCASE 2025 competition](https://github.com/birdnet-team/BioDCASE-Tiny-2025).
+You can configure your model training in `config.yaml` at:
+```yaml
+tensorflow_framework:
+  model_training:
+    seed: 42
+    n_epochs: 100
+    shuffle_buff_n: 10000
+    batch_size: 32
+    early_stopping:
+      patience: 100
+```
+
+### Model Evaluation
+Evaluate all models that were already trained and saved in `./output/03_models/` on classification performance with:
+```bash
+python model_evaluation.py
+```
+The resource efficiency from the `.tflite` models is not evaluated but can be found in the report directories `output/04_reports/` as `monitor_report.yaml` file which is saved after training and deployment.
+
 
 ### ESP32-S3 Build and Deployment
 
 <!-- To deploy your model to the ESP32-S3-Korvo-2 board, you'll use the built-in deployment tools that handle model conversion, code generation, and flashing. 
 The deployment process: -->
 
-Our model build and deployment procedure to the ESP32-S3-Korvo-2 board follows following three main steps:
+Our model build and deployment procedure to the ESP32-S3-Korvo-2 development board follows following three main steps:
 1. Build target creation
 2. Compilation (Docker or ESP-IDF)
 3. Deployment and Monitoring (Docker or ESP-IDF)
@@ -248,21 +288,21 @@ Our model build and deployment procedure to the ESP32-S3-Korvo-2 board follows f
 In the build target creation step, the firmware in `./biodcase_tiny/embedded/firmware/main/` is copied and processed with [Jinja](https://jinja.palletsprojects.com/en/stable/) where the serialized `.tflite` model (stored by the pipeline in e.g. `./output/03_models/pytorch`) and feature extraction parameters are inserted.
 The build target is stored in `./output/05_generated_embedded_code/src/`.
 
-Once the build target is ready you can run
+Once the build target is ready, the compilation is done by:
 ```bash
 python compile_embedded_src_code.py
 ```
-to manually compile the target.
 Afterwards you can deploy the compiled code on the actual device with:
 ```bash
 python deploy_embedded_compiled_code.py
 ```
 
-Note: If you do not want to use docker, have a look into `embedded_code_generation.py` and  `biodcase_tiny/embedded/esp_toolchain.py` where you find the corresponding `idf.py` commands for building (build), deploying (flash), and monitoring (monitor). We still recommend to use docker, because we also store the monitor output to e.g. `./output/04_reports/pytorch/monitor_report.yaml`.
+Note: If you do not want to use docker, have a look into `embedded_code_generation.py` and  `biodcase_tiny/embedded/esp_toolchain.py` where you find the corresponding `idf.py` commands for building (build), deploying (flash), and monitoring (monitor). 
+We still recommend to use docker, because it stores the monitor output to e.g. `./output/04_reports/pytorch/monitor_report.yaml` where the resource efficiency metrics on the device are shown.
 
 #### Technical Details
 
-The [ESP32-S3-Korvo-2](https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/dev-boards/user-guide-esp32-s3-korvo-2.html) board features:
+The [ESP32-S3-Korvo-2](https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/dev-boards/user-guide-esp32-s3-korvo-2.html) development board features:
 - ESP32-S3 dual-core processor
 - Built-in microphone array
 - Audio codec for high-quality audio processing
@@ -282,13 +322,9 @@ and can be bought, for instance, [here](https://www.digikey.de/de/products/detai
 ### Development Tips
 
 1. **Feature Extraction Parameters**: Carefully tune the feature extraction parameters in `config.yaml`.
-
 2. **Model Size**: Keep your model compact. The ESP32-S3 has limited memory, so optimize your architecture accordingly.
-
 3. **Profiling**: Use the profiling tools to identify bottlenecks in your implementation.
-
 4. **Memory Management**: Be mindful of memory allocation on the ESP32. Monitor the allocations reported by the firmware.
-
 5. **Docker Environment**: The toolchain uses Docker to provide a consistent ESP-IDF environment, making it easier to build on any host system.
 
 
@@ -308,19 +344,20 @@ Your solution will be evaluated on a hidden test set and the scores will be pres
 
 ### Evaluation Metrics
 
-The BioDCASE-Tiny competition evaluates models based on multiple criteria on **classification performance** and **resource efficiency**:
+The BioDCASE-Tiny competition evaluates models based on multiple criteria on **Classification Performance** and **Resource Efficiency**:
 
-- **Average precision**: the average value of precision across all recall levels from 0 to 1. 
+- **Top-1 Accuracy**: Accuracy of the highest predicted class to the target class. 
+- **ROC AUC**: Area Under the Receiver Operating Characteristic Curve.
 - **Model Size**: `.tflite` model file size (KB)
 - **Inference Time**: Average time required for single audio classification, including feature extraction (ms)
 - **Peak Memory Usage**: Maximum RAM usage during inference (KB)
 
 ### Ranking
-Participants will be ranked separately for each one of the evaluation metrics.
+Participants will be ranked according to all evaluation metrics.
 
 
 ## Limitations
-This framework does not yet use real microphone data from the korvo-2!
+This framework does not yet use real microphone data from the Korvo-2 dev board!
 Instead, it runs a profiler to evaluate the model and feature extraction in size and time consumption.
 Therefore, we are looking for interested collaborators to improve this project (especially on the embedded side) and create an even better challenge starting point for future editions of BioDCASE.
 
@@ -372,4 +409,3 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
 - C.W. was supported by the University of Veterinary Medicine, Vienna.
 - Y.B. was supported by the EU MSCA Doctoral Network Bioacoustic AI (BioacAI, 101071532).
 - T.S. and S.K. were supported by Chemnitz University of Technology
-
