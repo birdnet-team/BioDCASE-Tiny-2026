@@ -28,12 +28,14 @@ class InferenceHandler():
 
     # members
     self.model = None
+    self.tflite_model_interpreter = None
     self.feature_handler = None
     self.feature_shape = None
     self.model_dir = Path(self.cfg['model_dir'])
     self.label_dict = None
     self.is_keras_model = None
     self.target_model_file = None
+    self.target_tflite_model_file = None
 
     # some basic checks
     assert self.model_dir.is_dir(), "Your model directory does not exist: {}!".format(self.model_dir)
@@ -55,7 +57,6 @@ class InferenceHandler():
       'model_dir': './your_submission_model',
       'saved_model_extension': '.pth',
       'label_dict_yaml_path': './your_submission_model/label_dict.yaml',
-      'use_argmax_after_model_predict': False,
       'feature_handler': {
         'module': 'feature_handler',
         'attr': 'FeatureHandler',
@@ -115,6 +116,9 @@ class InferenceHandler():
     # create model instance
     self.create_and_load_model_instance()
 
+    # create and load tflite model interpreter
+    self.create_and_load_tflite_interpreter()
+
 
   def create_and_load_model_instance(self):
     """
@@ -164,6 +168,30 @@ class InferenceHandler():
     self.model.set_model_to_evaluation_mode()
 
 
+  def create_and_load_tflite_interpreter(self):
+    """
+    tflite interpreter
+    """
+
+    # get model files
+    tflite_model_file = self.target_model_file.with_suffix(self.cfg['tflite_model_extension'])
+
+    # tflite not mandatory - skip
+    if not tflite_model_file.is_file(): 
+      print("***Could not find .tflite file, name it like your main model file!!!")
+      return
+
+    # get model file
+    self.target_tflite_model_file = tflite_model_file
+
+    # interpreter needed
+    from ai_edge_litert.interpreter import Interpreter
+
+    # tflite interpreter
+    self.tflite_model_interpreter = Interpreter(model_path=str(self.target_tflite_model_file))
+    self.tflite_model_interpreter.allocate_tensors()
+
+
   def infer(self, wav, fs=24000):
     """
     inference
@@ -176,12 +204,64 @@ class InferenceHandler():
     features = self.feature_handler.extract(wav)
 
     # model inference
-    y_hat = self.model.predict(features)
+    y_hat_model = self.model.predict(features)
 
-    # do argmax
-    if self.cfg['use_argmax_after_model_predict']: y_hat = np.argmax(y_hat, axis=-1)
+    # not tflite model
+    if self.tflite_model_interpreter is None: return y_hat_model, None
 
-    return y_hat
+    # tflite inference
+    y_hat_tflite = self.tflite_inference(features)
+
+    return y_hat_model, y_hat_tflite
+
+
+  def tflite_inference(self, features):
+    """
+    tflite inference
+    """
+
+    # details
+    input_details = self.tflite_model_interpreter.get_input_details()
+    output_details = self.tflite_model_interpreter.get_output_details()
+
+    # types
+    input_dtype = input_details[0]["dtype"]
+    output_dtype = output_details[0]["dtype"]
+
+    # quantization
+    if input_dtype == np.int8 and output_dtype == np.int8:
+      input_scale = input_details[0]['quantization_parameters']['scales'][0]
+      input_zero_point = input_details[0]['quantization_parameters']['zero_points'][0]
+      output_scale = output_details[0]['quantization_parameters']['scales'][0]
+      output_zero_point = output_details[0]['quantization_parameters']['zero_points'][0]
+      features = np.clip(features / input_scale + input_zero_point, -128, 127).astype(input_dtype)
+      quantized = True
+
+    # no quantization
+    elif input_dtype == np.float32 and output_dtype == np.float32:
+      quantized = False
+
+    # should not happen
+    else:
+      raise NotImplementedError(
+        f"Case where input dtype is {input_dtype} "
+        f"and output dtype is {output_dtype} not supported"
+      )
+
+    # feature setup
+    features = features.reshape(input_details[0]['shape'])
+    self.tflite_model_interpreter.set_tensor(input_details[0]['index'], features)
+
+    # compute
+    self.tflite_model_interpreter.invoke()
+
+    # get output
+    y_hat = self.tflite_model_interpreter.get_tensor(output_details[0]['index'])
+
+    # quantized?
+    if quantized: y_hat = (y_hat.astype(np.float32) - output_zero_point) * output_scale
+
+    return np.array(y_hat)
 
 
   def check_model(self):
@@ -233,6 +313,7 @@ class InferenceHandler():
     print("\n--\nInference handler info:")
     print("model class: {}{}".format(self.model.__class__.__name__, ' is keras model' if self.is_keras_model else ''))
     print("loaded model file: [{}]".format(self.target_model_file))
+    print("tflite model file: [{}]".format(self.target_tflite_model_file))
     print("label dict: {}".format(self.label_dict))
     print("using num classes: {}".format(len(self.label_dict)))
     print("feature shape: {}".format(self.get_feature_shape()))
@@ -276,7 +357,8 @@ if __name__ == '__main__':
     inference_handler.info()
 
     # infer
-    y_hat = inference_handler.infer(waveform, fs)
+    y_hat_model, y_hat_tflite = inference_handler.infer(waveform, fs)
 
     # info
-    print("predicted: ", y_hat)
+    print("\nmodel predicted:\n {},\nargmax: {}".format(y_hat_model, np.argmax(y_hat_model, axis=-1)))
+    print("\ntflite predicted:\n {},\nargmax: {}".format(y_hat_tflite, np.argmax(y_hat_tflite, axis=-1) if y_hat_tflite is not None else None))

@@ -14,8 +14,8 @@ inference_handler:
   target_wav_length_sec: 3
   model_dir: './your_submission_model'
   saved_model_extension: '.pth'
+  tflite_model_extension: '.tflite'
   label_dict_yaml_path: './your_submission_model/label_dict.yaml'
-  use_argmax_after_model_predict: True
 
   # feature handler
   feature_handler:
@@ -55,8 +55,8 @@ inference_handler_pytorch:
   target_wav_length_sec: 3
   model_dir: './your_submission_model'
   saved_model_extension: '.pth'
+  tflite_model_extension: '.tflite'
   label_dict_yaml_path: './your_submission_model/label_dict.yaml'
-  use_argmax_after_model_predict: True
 
   # feature handler
   feature_handler:
@@ -96,8 +96,8 @@ inference_handler_tensorflow:
   target_wav_length_sec: 3
   model_dir: './your_submission_model'
   saved_model_extension: '.keras'
+  tflite_model_extension: '.tflite'
   label_dict_yaml_path: './your_submission_model/label_dict.yaml'
-  use_argmax_after_model_predict: True
 
   # feature handler
   feature_handler:

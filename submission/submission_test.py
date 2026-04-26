@@ -36,7 +36,7 @@ def run_inference(cfg, inference_scores_file):
 
   # collect targets and predictions
   y_targets = []
-  y_predictions = []
+  y_predictions_model, y_predictions_tflite = [], []
   inference_score_dict = {}
 
   # run through each test file
@@ -49,21 +49,24 @@ def run_inference(cfg, inference_scores_file):
     waveform, fs = soundfile.read(test_file)
 
     # infer
-    y_hat = inference_handler.infer(waveform, fs)
+    y_hat_model, y_hat_tflite = inference_handler.infer(waveform, fs)
 
     # add target and prediction
     y_targets.append(y_target)
-    y_predictions.extend(y_hat)
+    y_predictions_model.extend(y_hat_model)
+    if y_hat_tflite is not None: y_predictions_tflite.extend(y_hat_tflite)
 
   # to numpy
   y_targets = np.array(y_targets)
-  y_predictions = np.array(y_predictions)
-
-  # accuracy
-  acc = np.round(np.mean(y_targets == y_predictions), decimals=6).item()
+  y_predictions_model = np.array(y_predictions_model)
+  y_predictions_tflite = np.array(y_predictions_tflite)
 
   # add to score dict
-  inference_score_dict['accuracy'] = acc
+  inference_score_dict['accuracy_model'] = np.round(np.mean(y_targets == np.argmax(y_predictions_model, axis=-1)), decimals=4).item()
+  inference_score_dict['accuracy_tflite'] = np.round(np.mean(y_targets == np.argmax(y_predictions_tflite, axis=-1)), decimals=4).item()
+
+  # todo:
+  inference_score_dict['accuracy'] = np.round(np.mean(y_targets == np.argmax(y_predictions_model, axis=-1)), decimals=4).item()
   inference_score_dict['inference_model_size'] = inference_handler.get_model_size()
 
   print(inference_handler.get_model_file())
@@ -78,15 +81,15 @@ def run_inference(cfg, inference_scores_file):
   # info score
   print("\nInference results:")
   print("y_targets: ", y_targets)
-  print("y_predictions: ", y_predictions)
-  print("Accuracy: {:.4f}".format(acc))
+  print("y_predictions_model argmax: ", np.argmax(y_predictions_model, axis=-1))
+  print("Accuracy: {:.4f}".format(inference_score_dict['accuracy']))
   print("\nSuccessful submission test run!")
 
   # dump scores
   yaml.dump({'inference_score_dict': inference_score_dict}, open(inference_scores_file, 'w'))
 
   # plot
-  plot_confusion_matrix(y_targets, y_predictions, labels=inference_handler.get_label_dict().keys(), plot_path=report_dir / 'cm_inference.png', show_plot_flag=False)
+  plot_confusion_matrix(y_targets, np.argmax(y_predictions_model, axis=-1), labels=inference_handler.get_label_dict().keys(), plot_path=report_dir / 'cm_inference.png', show_plot_flag=False)
 
 
 def run_write_final_results(cfg, inference_scores_file, monitor_report_file, submission_results_file):
