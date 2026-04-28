@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
   # model
   x = torch.randn(num_samples, 1, 133, 40)
-  model = Baseline(cfg['model'], input_shape=tuple(x.shape[1:]), num_classes=num_classes)
+  model = Baseline(cfg['pytorch_framework']['model'], input_shape=tuple(x.shape[1:]), num_classes=num_classes)
   model.info()
 
   # data structure
@@ -97,10 +97,10 @@ if __name__ == '__main__':
   # validation step
   y_pred, loss = model.validation_step(data)
 
-  print("actual: ", y)
+  print("actual: ", y.numpy())
   print("prediction: ", y_pred)
   print("loss: ", loss)
-  print("acc: ", torch.sum(y == y_pred).item() / len(y))
+  print("acc: ", np.mean(y.numpy() == np.argmax(y_pred, axis=-1)))
 
   # save model
   model.save()

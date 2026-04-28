@@ -331,7 +331,7 @@ and can be bought, for instance, [here](https://www.digikey.de/de/products/detai
 ## Rules and Submissions
 > <font color="red">**Note:**</font> <br>
 > We are still updating the submission rules to make it easy for you to submit your work and easy for us to evaluate your submission!
-> The final submission rules are to be expected by end of April, so please stay up to date on this repository!
+> The final submission rules are to be expected by **mid of May**, so please stay up to date on this repository!
 
 Generally, you will have to submit a .zip file that contains:
 1. Inference model

@@ -7,16 +7,17 @@ import numpy as np
 import soundfile
 
 from pathlib import Path
-from inference_handler import InferenceHandler
 
 # required package paths - root path
 [sys.path.append(p) for p in[str(Path(__file__).parent.parent)] if p not in sys.path]
 
 from plots import plot_confusion_matrix
-from biodcase2026_tiny_ml_pytorch import run_deploy_embedded_compiled_code
+from embedded_code_generation import run_compile_embedded_src_code, run_create_target_embedded_src_code, run_deploy_embedded_compiled_code
+from inference_handler import InferenceHandler
+from biodcase_tiny.embedded.esp_monitor_parser import compute_macs
 
 
-def run_inference(cfg, inference_scores_file):
+def run_inference(cfg, inference_scores_file, cm_plot_file):
   """
   run inference
   """
@@ -69,8 +70,8 @@ def run_inference(cfg, inference_scores_file):
   inference_score_dict['accuracy'] = np.round(np.mean(y_targets == np.argmax(y_predictions_model, axis=-1)), decimals=4).item()
   inference_score_dict['inference_model_size'] = inference_handler.get_model_size()
 
-  print(inference_handler.get_model_file())
-  target_tflite_file = Path(inference_handler.get_model_file()).parent / (Path(inference_handler.get_model_file()).stem + '.tflite')
+  # tflite file
+  target_tflite_file = inference_handler.get_tflite_model_file()
 
   # tflite model size
   inference_score_dict['tflite_model_size'] = target_tflite_file.stat().st_size if target_tflite_file.is_file() else 'N/A'
@@ -83,13 +84,77 @@ def run_inference(cfg, inference_scores_file):
   print("y_targets: ", y_targets)
   print("y_predictions_model argmax: ", np.argmax(y_predictions_model, axis=-1))
   print("Accuracy: {:.4f}".format(inference_score_dict['accuracy']))
-  print("\nSuccessful submission test run!")
+
+  # todo:
+  # add macs / num params 
 
   # dump scores
   yaml.dump({'inference_score_dict': inference_score_dict}, open(inference_scores_file, 'w'))
 
   # plot
-  plot_confusion_matrix(y_targets, np.argmax(y_predictions_model, axis=-1), labels=inference_handler.get_label_dict().keys(), plot_path=report_dir / 'cm_inference.png', show_plot_flag=False)
+  plot_confusion_matrix(y_targets, np.argmax(y_predictions_model, axis=-1), labels=inference_handler.get_label_dict().keys(), plot_path=cm_plot_file, show_plot_flag=False)
+
+  return target_tflite_file
+
+
+def run_embedded(cfg, tflite_path, monitor_report_file):
+  """
+  run embedded
+  """
+
+  # src path
+  src_path = Path(cfg['generate_embedded_code']['gen_code_dir']) / cfg['generate_embedded_code']['gen_code_source_folder_name']
+
+  # gen code available just deploy it - skip building
+  if src_path.is_dir():
+
+    # code
+    try: 
+      run_deploy_embedded_compiled_code(cfg)
+    except:
+      print("\n***Could not deploy your compiled code!")
+
+  # no gen code available - build it first (only works if .tflite model is saved)
+  else:
+
+    # tflite not available - skip
+    if tflite_path is None: return
+        
+    # info
+    print(".tflite available: {}\ncreate, build, deploy...".format(tflite_path))
+
+    # todo: solve this in a better way
+    # add feature params - for target creation
+    cfg['datamodule'] = {}
+    cfg['datamodule']['feature_extraction'] = cfg['inference_handler']['feature_handler']['kwargs']
+    cfg['datamodule']['target_sample_rate'] = cfg['inference_handler']['target_sample_rate']
+
+    # run generate embedded src code
+    run_create_target_embedded_src_code(cfg, tflite_path)
+
+    # compile
+    run_compile_embedded_src_code(cfg)
+
+    # deploy
+    try:
+      run_deploy_embedded_compiled_code(cfg)
+    except:
+      print("\n***Could not deploy compiled code!")
+
+    # todo:
+    # macs
+    macs = compute_macs(tflite_path)
+    print("macs: ", macs)
+
+  # todo:
+  # copy monitor report file to report dir location!
+  from biodcase_tiny.embedded.esp_monitor_parser import REPORT_FILE as _monitor_report_file
+    
+  # does not exist - skip
+  if not _monitor_report_file.is_file(): return
+
+  # copy file
+  yaml.dump(yaml.safe_load(open(_monitor_report_file, 'r')), open(monitor_report_file, 'w'), default_flow_style=False, sort_keys=False)
 
 
 def run_write_final_results(cfg, inference_scores_file, monitor_report_file, submission_results_file):
@@ -150,10 +215,11 @@ if __name__ == '__main__':
   os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
   # yaml config file
-  cfg = yaml.safe_load(open('config.yaml'))
+  cfg = yaml.safe_load(open('config_submission.yaml'))
 
   # report dir
-  report_dir = Path(__file__).parent / 'reports'
+  #report_dir = Path(__file__).parent / 'reports'
+  report_dir = Path(cfg['report_dir'])
 
   # create directory
   if not report_dir.is_dir(): report_dir.mkdir()
@@ -162,24 +228,22 @@ if __name__ == '__main__':
   submission_results_file = report_dir / 'submission_results.yaml'
   inference_scores_file = report_dir / 'inference_scores.yaml'
   monitor_report_file = report_dir / 'monitor_report.yaml'
+  cm_plot_file = report_dir / 'cm_inference.png'
 
   # remove previous generated files
-  [(print("remove: ", f.name), f.unlink()) for f in [submission_results_file, inference_scores_file, monitor_report_file, *list(report_dir.glob('*.png'))] if f.is_file()]
+  [(print("remove: ", f.name), f.unlink()) for f in [submission_results_file, inference_scores_file, monitor_report_file, cm_plot_file] if f.is_file()]
 
   # inference
-  run_inference(cfg, inference_scores_file)
+  tflite_path = run_inference(cfg, inference_scores_file, cm_plot_file)
 
-  # code
-  try: 
-    # check if there is generated code
-    run_deploy_embedded_compiled_code(cfg)
-
-  except:
-    print("\n***Could not deploy your compiled code!")
+  # embedded
+  run_embedded(cfg, tflite_path, monitor_report_file)
 
   # write final results
   submission_result_dict = run_write_final_results(cfg, inference_scores_file, monitor_report_file, submission_results_file)
 
   # until now everything run successfully -> save total scores 
   print("\nSuccessful submission test run!")
-  print("Your results:\n{}".format(submission_result_dict))
+  #print("Your results:\n{}".format(submission_result_dict))
+  print("Your results:")
+  [print("{}: {}".format(k, v)) for k, v in submission_result_dict.items()]
