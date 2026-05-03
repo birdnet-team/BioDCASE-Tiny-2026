@@ -7,6 +7,8 @@ import numpy as np
 import soundfile
 
 from pathlib import Path
+from scipy.special import softmax
+from sklearn.metrics import roc_auc_score
 
 # required package paths - root path
 [sys.path.append(p) for p in[str(Path(__file__).parent.parent)] if p not in sys.path]
@@ -62,19 +64,20 @@ def run_inference(cfg, inference_scores_file, cm_plot_file):
   y_predictions_model = np.array(y_predictions_model)
   y_predictions_tflite = np.array(y_predictions_tflite)
 
-  # add to score dict
-  inference_score_dict['accuracy_model'] = np.round(np.mean(y_targets == np.argmax(y_predictions_model, axis=-1)), decimals=4).item()
-  inference_score_dict['accuracy_tflite'] = np.round(np.mean(y_targets == np.argmax(y_predictions_tflite, axis=-1)), decimals=4).item()
-
-  # todo:
-  inference_score_dict['accuracy'] = np.round(np.mean(y_targets == np.argmax(y_predictions_model, axis=-1)), decimals=4).item()
-  inference_score_dict['inference_model_size'] = inference_handler.get_model_size()
-
   # tflite file
   target_tflite_file = inference_handler.get_tflite_model_file()
 
-  # tflite model size
-  inference_score_dict['tflite_model_size'] = target_tflite_file.stat().st_size if target_tflite_file.is_file() else 'N/A'
+  # add to score dict
+  inference_score_dict['accuracy_inference'] = np.round(np.mean(y_targets == np.argmax(y_predictions_model, axis=-1)), decimals=4).item()
+  inference_score_dict['accuracy_tflite'] = np.round(np.mean(y_targets == np.argmax(y_predictions_tflite, axis=-1)), decimals=4).item()
+
+  # auc score
+  inference_score_dict['roc_auc_inference'] = roc_auc_score(y_targets, softmax(y_predictions_model, axis=1), multi_class="ovr", average="macro")
+  inference_score_dict['roc_auc_tflite'] = roc_auc_score(y_targets, softmax(y_predictions_tflite, axis=1), multi_class="ovr", average="macro")
+
+  # model size
+  inference_score_dict['model_size_inference'] = inference_handler.get_model_size()
+  inference_score_dict['model_size_tflite'] = target_tflite_file.stat().st_size if target_tflite_file.is_file() else 'N/A'
 
   # info message
   if not target_tflite_file.is_file(): print("***No tflite model, name must be same as the inference model but with .tflite as ending, e.g.: {}".format(target_tflite_file))
@@ -83,10 +86,16 @@ def run_inference(cfg, inference_scores_file, cm_plot_file):
   print("\nInference results:")
   print("y_targets: ", y_targets)
   print("y_predictions_model argmax: ", np.argmax(y_predictions_model, axis=-1))
-  print("Accuracy: {:.4f}".format(inference_score_dict['accuracy']))
+  print("y_predictions_tflite argmax: ", np.argmax(y_predictions_tflite, axis=-1))
+  print("Accuracy inference: {:.4f}, tflite: {:.4f}".format(inference_score_dict['accuracy_inference'], inference_score_dict['accuracy_tflite']))
 
   # todo:
-  # add macs / num params 
+  # macs
+  inference_score_dict['macs_tflite'] = compute_macs(target_tflite_file)
+  print("macs: ", inference_score_dict['macs_tflite'] )
+
+  # todo:
+  # num params
 
   # dump scores
   yaml.dump({'inference_score_dict': inference_score_dict}, open(inference_scores_file, 'w'))
@@ -119,6 +128,9 @@ def run_embedded(cfg, tflite_path, monitor_report_file):
 
     # tflite not available - skip
     if tflite_path is None: return
+
+    # adapt src path -> save to report dir
+    cfg['generate_embedded_code'].update({'gen_code_dir': cfg['report_dir']})
         
     # info
     print(".tflite available: {}\ncreate, build, deploy...".format(tflite_path))
@@ -141,11 +153,6 @@ def run_embedded(cfg, tflite_path, monitor_report_file):
     except:
       print("\n***Could not deploy compiled code!")
 
-    # todo:
-    # macs
-    macs = compute_macs(tflite_path)
-    print("macs: ", macs)
-
   # todo:
   # copy monitor report file to report dir location!
   from biodcase_tiny.embedded.esp_monitor_parser import REPORT_FILE as _monitor_report_file
@@ -162,15 +169,21 @@ def run_write_final_results(cfg, inference_scores_file, monitor_report_file, sub
   write final results
   """
 
+  # todo:
+  # add macs and num params
+  
   # your submission results init -> will be overwritten
   submission_result_dict = {
-    'average_precision': 0.0,
-    'inference_model_size_bytes': 'N/A',
-    'tflite_model_size_bytes': 'N/A',
-    'ram_usage_bytes': 'N/A',
-    'preprocessing_time_ms': 'N/A',
-    'model_time_ms': 'N/A',
-    'total_time_ms': 'N/A',
+    'accuracy_inference': 0.0,
+    'accuracy_tflite': 0.0,
+    'roc_auc_inference': 0.0,
+    'roc_auc_tflite': 0.0,
+    'model_size_inference_bytes': 'N/A',
+    'model_size_tflite_bytes': 'N/A',
+    'embedded_ram_usage_bytes': 'N/A',
+    'embedded_preprocessing_time_ms': 'N/A',
+    'embedded_model_time_ms': 'N/A',
+    'embedded_total_time_ms': 'N/A',
     }
 
   # scores
@@ -180,9 +193,12 @@ def run_write_final_results(cfg, inference_scores_file, monitor_report_file, sub
     inference_score_dict = yaml.safe_load(open(inference_scores_file, 'r'))['inference_score_dict']
 
     # change results
-    submission_result_dict['average_precision'] = inference_score_dict['accuracy']
-    submission_result_dict['inference_model_size_bytes'] = inference_score_dict['inference_model_size']
-    submission_result_dict['tflite_model_size_bytes'] = inference_score_dict['tflite_model_size']
+    submission_result_dict['accuracy_inference'] = inference_score_dict['accuracy_inference']
+    submission_result_dict['accuracy_tflite'] = inference_score_dict['accuracy_tflite']
+    submission_result_dict['roc_auc_inference'] = inference_score_dict['roc_auc_inference']
+    submission_result_dict['roc_auc_tflite'] = inference_score_dict['roc_auc_tflite']
+    submission_result_dict['model_size_inference_bytes'] = inference_score_dict['model_size_inference']
+    submission_result_dict['model_size_tflite_bytes'] = inference_score_dict['model_size_tflite']
 
   # monitoring profiler info
   if monitor_report_file.is_file():
@@ -191,11 +207,11 @@ def run_write_final_results(cfg, inference_scores_file, monitor_report_file, sub
     monitor_report_dict = yaml.safe_load(open(monitor_report_file, 'r'))
 
     # change
-    #submission_result_dict['tflite_model_size_bytes'] = monitor_report_dict['model_size_bytes']
-    submission_result_dict['preprocessing_time_ms'] = round(monitor_report_dict['timing_us']['preprocessing'] / 1000, 2)
-    submission_result_dict['model_time_ms'] = round(monitor_report_dict['timing_us']['inference'] / 1000, 2)
-    submission_result_dict['total_time_ms'] = round(monitor_report_dict['timing_us']['total'] / 1000, 2)
-    submission_result_dict['ram_usage_bytes'] = monitor_report_dict['ram_bytes']['arena_total']
+    #submission_result_dict['model_size_tflite_bytes'] = monitor_report_dict['model_size_bytes']
+    submission_result_dict['embedded_preprocessing_time_ms'] = round(monitor_report_dict['timing_us']['preprocessing'] / 1000, 2)
+    submission_result_dict['embedded_model_time_ms'] = round(monitor_report_dict['timing_us']['inference'] / 1000, 2)
+    submission_result_dict['embedded_total_time_ms'] = round(monitor_report_dict['timing_us']['total'] / 1000, 2)
+    submission_result_dict['embedded_ram_usage_bytes'] = monitor_report_dict['ram_bytes']['arena_total']
 
   # dump results
   yaml.dump({'submission_results': submission_result_dict}, open(submission_results_file, 'w'))

@@ -1,6 +1,9 @@
 # --
 # requirements for the tensorflow framework
 
+# choose a python version <= 3.13, because tensorflow (problem with litert-torch) is not yet supported in pip in later python versions.
+
+# packages required:
 dask
 docker
 flatbuffers
@@ -11,6 +14,8 @@ matplotlib
 numpy
 numba
 pandas
+scipy
+sklearn
 tdqm
 tensorflow
 pyarrow
