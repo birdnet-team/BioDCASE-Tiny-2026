@@ -7,6 +7,7 @@ import sys
 import importlib
 
 from pathlib import Path
+from biodcase_tiny.embedded.esp_monitor_parser import compute_macs
 
 
 class InferenceHandler():
@@ -36,6 +37,10 @@ class InferenceHandler():
     self.is_keras_model = None
     self.target_model_file = None
     self.target_tflite_model_file = None
+    self.macs_model = None
+    self.macs_tflite = None
+    self.num_params_model = None
+    self.num_params_tflite = None
 
     # some basic checks
     assert self.model_dir.is_dir(), "Your model directory does not exist: {}!".format(self.model_dir)
@@ -143,6 +148,11 @@ class InferenceHandler():
     if self.is_keras_model: 
       import keras
       self.model = keras.models.load_model(self.target_model_file)
+
+      # todo:
+      # macs and num params for keras model
+      self.macs_model = None
+      self.num_params_model = None
       return
 
     # all other models than keras must be checked!!
@@ -167,6 +177,10 @@ class InferenceHandler():
     # set to evaluation model
     self.model.set_model_to_evaluation_mode()
 
+    # macs and params
+    self.macs_model = self.model.count_operations()
+    self.num_params_model = self.model.count_params()
+
 
   def create_and_load_tflite_interpreter(self):
     """
@@ -190,6 +204,24 @@ class InferenceHandler():
     # tflite interpreter
     self.tflite_model_interpreter = Interpreter(model_path=str(self.target_tflite_model_file))
     self.tflite_model_interpreter.allocate_tensors()
+
+    # compute macs and num params
+    self.macs_tflite = compute_macs(self.target_tflite_model_file)
+
+    # params init
+    self.num_params_tflite = 0
+
+    # estimate params
+    for op in self.tflite_model_interpreter._get_ops_details():
+
+      # supported operations for num params count
+      if not op['op_name'] in ['CONV_2D', 'DEPTHWISE_CONV_2D', 'TRANSPOSE_CONV', 'FULLY_CONNECTED']: continue
+
+      # param tensor
+      param_tensor = self.tflite_model_interpreter.get_tensor_details()[op['inputs'][1]]['shape']
+
+      # add params
+      self.num_params_tflite += np.prod(param_tensor).item()
 
 
   def infer(self, wav, fs=24000):
@@ -278,7 +310,8 @@ class InferenceHandler():
     # check methods
     assert 'predict' in method_list, "Your model class has no method 'predict'!!!"
     assert 'load' in method_list, "Your model class has no method 'load'!!!"
-    assert 'set_model_to_evaluation_mode' in method_list, "Your model class has no method 'set_model_to_evaluation_mode'!!!"
+    assert 'count_params' in method_list, "Your model class has no method 'count_params'!!!"
+    assert 'count_operations' in method_list, "Your model class has no method 'count_operations'!!!"
 
 
   def check_feature_handler(self):
@@ -327,7 +360,11 @@ class InferenceHandler():
   def get_feature_shape(self): return self.feature_shape
   def get_model_size(self): return Path(self.target_model_file).stat().st_size
   def get_model_file(self): return self.target_model_file
+  def get_macs_model(self): return self.macs_model
+  def get_num_params_model(self): return self.num_params_model
   def get_tflite_model_file(self): return self.target_tflite_model_file
+  def get_macs_tflite(self): return self.macs_tflite
+  def get_num_params_tflite(self): return self.num_params_tflite
 
 
 if __name__ == '__main__':

@@ -274,12 +274,28 @@ class ModelBase(torch.nn.Module):
     """
     count all parameters
     """
-    return [p.numel() for p in self.parameters() if p.requires_grad]
+    import torchinfo
+    return torchinfo.summary(self, (1,) + tuple(self.cfg['input_shape']), col_names=["num_params"], verbose=0).total_params
 
 
   def count_operations(self):
     """
     calculate amount of operations, multiplication and add (MAD or MAC) is one operation
+    """
+    import torchinfo
+    return torchinfo.summary(self, (1,) + tuple(self.cfg['input_shape']), col_names=["mult_adds"], verbose=0).total_mult_adds
+
+
+  def my_count_params(self):
+    """
+    count all parameters - my version
+    """
+    return [p.numel() for p in self.parameters() if p.requires_grad]
+
+
+  def my_count_operations(self):
+    """
+    calculate amount of operations, multiplication and add (MAD or MAC) is one operation - my version
     """
 
     # net dimensions
@@ -296,6 +312,16 @@ class ModelBase(torch.nn.Module):
         ops = np.prod(new_dim) * np.prod(module.kernel_size) * last_dim[0] + module.out_channels * np.prod(module.kernel_size)
         net_dim.update({module_name: new_dim})
         net_ops.update({module_name: ops.item()})
+        continue
+
+      # max pool 2d
+      if isinstance(module, torch.nn.MaxPool2d):
+        module_name = 'maxpool2d{}'.format(len([k for k in net_dim.keys() if 'maxpool2d' in k]))
+        last_dim = list(net_dim.values())[-1]
+        new_dim = [last_dim[0]] + [(d - k) // s + 1 for d, k, s in zip(last_dim[1:], [module.kernel_size, module.kernel_size], [module.stride, module.stride])]
+        ops = 0
+        net_dim.update({module_name: new_dim})
+        net_ops.update({module_name: ops})
         continue
 
       # linear
@@ -321,8 +347,8 @@ class ModelBase(torch.nn.Module):
     import re
 
     # params and ops
-    params = self.count_params()
-    net_dim, net_ops = self.count_operations()
+    params = self.my_count_params()
+    net_dim, net_ops = self.my_count_operations()
 
     # cpu info
     cpu_info = '' if not str(self.device) == 'cpu' else re.sub(r'Model name:\s*', '', re.findall(r'Model name:.*', (subprocess.check_output("lscpu", shell=True).strip()).decode())[0])
@@ -330,10 +356,11 @@ class ModelBase(torch.nn.Module):
     # show info
     print("\n--\n{} info: ".format(self.cfg['model_name']))
     print("model params: ", [(list(p.shape), p.type()) for p in self.parameters()])
-    print("num params: {}, sum: {}".format(params, '{}K'.format(sum(params) / 1000.0) if int(sum(params) / 1000.0) else sum(params)))
-    print("net dim: ", net_dim)
-    print("net ops: ", net_ops)
-    print("total ops: ", sum(net_ops.values()))
+    print("my num params: {}, sum: {}".format(params, '{}K'.format(sum(params) / 1000.0) if int(sum(params) / 1000.0) else sum(params)))
+    print("my net dim: ", net_dim)
+    print("my net ops: ", net_ops)
+    print("my total ops: ", sum(net_ops.values()))
+    print("torchinfo num params: {}, mult adds: {}".format(self.count_params(), self.count_operations()))
     print("device: {}".format(self.device) + (" -- GPU: {}".format(torch.cuda.get_device_name(self.device)) if torch.cuda.is_available() and not self.cfg['device']['use_cpu'] else " -- CPU: {}".format(cpu_info)))
     print("torch info: "), torchinfo.summary(self, (1,) + tuple(self.cfg['input_shape']), col_names=["kernel_size", "output_size", "num_params", "mult_adds"])
     print("--\n")
