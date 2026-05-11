@@ -62,7 +62,7 @@ def run_compile_embedded_src_code(cfg):
   toolchain.compile(src_path=src_path)
 
 
-def run_deploy_embedded_compiled_code(cfg):
+def run_deploy_embedded_compiled_code(cfg, report_file_path=None):
 
   # info
   print("\nDeploy code to microcontroller and monitor...")
@@ -76,4 +76,4 @@ def run_deploy_embedded_compiled_code(cfg):
   # toolchain: flash, and monitor
   toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])
   toolchain.flash(src_path=src_path)
-  toolchain.monitor(src_path=src_path)
+  toolchain.monitor(src_path=src_path, report_file_path=report_file_path)

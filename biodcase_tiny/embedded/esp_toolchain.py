@@ -141,7 +141,7 @@ class ESPToolchain:
       container.stop()
 
 
-  def monitor(self, src_path):
+  def monitor(self, src_path, report_file_path=None):
     """
     monitor code on esp
     """
@@ -166,11 +166,11 @@ class ESPToolchain:
         print(decoded)
         collected_lines.append(decoded)
         if "main_task: Returned from app_main()" in decoded:
-          parse_monitor_output(collected_lines)
+          parse_monitor_output(collected_lines, report_file_path=report_file_path)
           container.stop()
     except (Exception, KeyboardInterrupt):
       if collected_lines:
-        parse_monitor_output(collected_lines)
+        parse_monitor_output(collected_lines, report_file_path=report_file_path)
       container.stop()
 
 

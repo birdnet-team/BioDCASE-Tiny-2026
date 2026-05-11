@@ -136,17 +136,24 @@ def _load_report() -> dict:
     with open(REPORT_FILE) as f:
         return yaml.safe_load(f)
 
-def _save_report(report: dict) -> None:
+def _save_report(report: dict, report_file_path=None) -> None:
     """Persist *report* to the standard report path."""
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    with open(REPORT_FILE, "w") as f:
+
+    # specify target file
+    target_report_file_path = Path(report_file_path) if not report_file_path is None else REPORT_FILE
+
+    # create report folder
+    target_report_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # dump report
+    with open(target_report_file_path, "w") as f:
         yaml.dump(report, f, default_flow_style=False, sort_keys=False)
-    print(f"[esp_monitor_parser] Report written to {REPORT_FILE}")
+    print(f"[esp_monitor_parser] Report written to {target_report_file_path}")
 
 
 # monitor report functions
 
-def parse_monitor_output(lines: list[str]) -> dict:
+def parse_monitor_output(lines: list[str], report_file_path=None) -> dict:
     """
     Parse ESP32 serial monitor output and write a YAML report to
     ./output/04_reports/monitor_report.yaml.
@@ -253,7 +260,7 @@ def parse_monitor_output(lines: list[str]) -> dict:
     if all(t is not None for t in times):
         report["timing_us"]["total"] = sum(times)
 
-    _save_report(report)
+    _save_report(report, report_file_path=report_file_path)
     return report
 
 def finalize_monitor_report(framework: str) -> dict:

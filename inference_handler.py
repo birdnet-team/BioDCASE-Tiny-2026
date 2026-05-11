@@ -146,13 +146,16 @@ class InferenceHandler():
 
     # keras -> simply load the model and everything is set up
     if self.is_keras_model: 
+
+      # keras packages
       import keras
+
+      # load model
       self.model = keras.models.load_model(self.target_model_file)
 
-      # todo:
-      # macs and num params for keras model
-      self.macs_model = None
-      self.num_params_model = None
+      # macs and params
+      self.macs_model = self.compute_macs_keras(self.model)
+      self.num_params_model = self.model.count_params()
       return
 
     # all other models than keras must be checked!!
@@ -180,6 +183,36 @@ class InferenceHandler():
     # macs and params
     self.macs_model = self.model.count_operations()
     self.num_params_model = self.model.count_params()
+
+
+  def compute_macs_keras(self, model):
+    """
+    compute macs keras
+    """
+
+    try:
+      import tensorflow as tf
+      from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
+      
+      # inputs
+      inputs = [tf.TensorSpec([1] + list(inp.shape[1:]), inp.dtype) for inp in model.inputs]
+
+      # graph
+      graph = convert_variables_to_constants_v2_as_graph(tf.function(model).get_concrete_function(inputs))[0].graph
+
+      # profiler
+      run_meta = tf.compat.v1.RunMetadata()
+
+      # get flops
+      flops = tf.compat.v1.profiler.profile(graph=graph, run_meta=run_meta, cmd="scope", options=tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()).total_float_ops
+      
+      # estimate macs
+      macs = flops // 2
+
+      return macs
+
+    except:
+      return None
 
 
   def create_and_load_tflite_interpreter(self):

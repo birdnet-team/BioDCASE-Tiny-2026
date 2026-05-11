@@ -1,7 +1,7 @@
 # --
 # submission information
 
-# submision
+# Submision
 submission:
   # Submission label
   # Label is used to index submissions, to avoid overlapping codes among submissions
@@ -32,6 +32,9 @@ submission:
         department: xxx
         location: xxx
 
+  # if coding agents (openClaw) were used, yes or no
+  coding_agents_ai_used: !!null
+
 
 # System information
 system:
@@ -39,6 +42,9 @@ system:
   # meta analysis of the submitted system. Use general level tags, if possible use the tags provided in comments.
   # If information field is not applicable to the system, use "!!null".
   description:
+
+    # Machine learning framework: pytorch, tensorflow
+    machine_learning_framework: !!null
 
     # Acoustic representation
     acoustic_features: log mel spectrogram
@@ -49,13 +55,15 @@ system:
     # Embeddings
     embeddings: !!null
 
-    # Machine learning
+    # model architecture, describe shortly what model type was used, e.g. self defined CNN, MobileNet, ...
+    model_architecture: !!null
+
     # What kind of loss function was used during model training?
     training_objective: cross entropy
 
-    # Model compression
     # What kind of model compression techniques were used, if any?
-    model_compression: None
+    # e.g. Pruning, quantization, knowledge-distillation, ...
+    model_compression: !!null
 
     # External data usage method
     external_data_usage: !!null
@@ -70,46 +78,28 @@ system:
       # Dataset access url
       url: !!null
       # Total audio length in minutes
-      total_audio_length: !!null            # minutes
+      total_audio_length: !!null
 
-# System results 
+# Results
 results:
 
-  # Classification Performance
-  average_precision: xxx
-  
-  # Resource Efficiency on the ESP32-S3-Korvo-2 development board
-  resource_efficiency:
-    model_size: xxx # in (KB)
-    inference_time: xxx # in (ms)
+  # Classification scores, the subscript "inference" indicates the trained model and "tflite" indicates its tflite version.
+  accuracy_inference: N/A
+  accuracy_tflite: N/A
+  roc_auc_inference: N/A
+  roc_auc_tflite: N/A
 
-    # could not find this:
-    peak_memory: !!null  # in (KB)
+  # Resource efficiency
+  model_size_inference_bytes: N/A
+  model_size_tflite_bytes: N/A
+  macs_inference: N/A
+  macs_tflite: N/A
+  num_params_inference: N/A
+  num_params_tflite: N/A
 
-
-# --
-# todos:
-
-coding_agents_ai_used: yes or no, (openclaw)
-
-backbone:
-
-model_arch:
-
-model_training:
-
-audio_frontend:
-
-loss_function:
-
-pruning:
-
-knowledge-distillation:
-
-# pytorch, tensorflow
-machine-learning_framework:
-
-# add to repo
-collaborate.md
-
-acknowledgement:
+  # Embedded model measured on hardware
+  embedded_time_ms_setup: N/A
+  embedded_time_ms_preprocessing: N/A
+  embedded_time_ms_model: N/A
+  embedded_time_ms_total: N/A
+  embedded_ram_usage_bytes: N/A

@@ -27,10 +27,6 @@ def run_inference(cfg, inference_scores_file, cm_plot_file):
   # inference handler
   inference_handler = InferenceHandler(cfg['inference_handler'])
 
-  # for testing
-  #inference_handler = InferenceHandler(cfg['inference_handler_tensorflow'])
-  #inference_handler = InferenceHandler(cfg['inference_handler_pytorch'])
-
   # info
   inference_handler.info()
 
@@ -97,6 +93,9 @@ def run_inference(cfg, inference_scores_file, cm_plot_file):
   inference_score_dict['num_params_inference'] = inference_handler.get_num_params_model()
   inference_score_dict['num_params_tflite'] = inference_handler.get_num_params_tflite()
 
+  # handle None types in dict -> "N/A"
+  [inference_score_dict.update({k: "N/A"}) for k, v in inference_score_dict.items() if v is None]
+
   # dump scores
   yaml.dump({'inference_score_dict': inference_score_dict}, open(inference_scores_file, 'w'))
 
@@ -119,7 +118,7 @@ def run_embedded(cfg, tflite_path, monitor_report_file):
 
     # code
     try: 
-      run_deploy_embedded_compiled_code(cfg)
+      run_deploy_embedded_compiled_code(cfg, report_file_path=monitor_report_file)
     except:
       print("\n***Could not deploy your compiled code!")
 
@@ -149,28 +148,15 @@ def run_embedded(cfg, tflite_path, monitor_report_file):
 
     # deploy
     try:
-      run_deploy_embedded_compiled_code(cfg)
+      run_deploy_embedded_compiled_code(cfg, report_file_path=monitor_report_file)
     except:
       print("\n***Could not deploy compiled code!")
-
-  # todo:
-  # copy monitor report file to report dir location!
-  from biodcase_tiny.embedded.esp_monitor_parser import REPORT_FILE as _monitor_report_file
-    
-  # does not exist - skip
-  if not _monitor_report_file.is_file(): return
-
-  # copy file
-  yaml.dump(yaml.safe_load(open(_monitor_report_file, 'r')), open(monitor_report_file, 'w'), default_flow_style=False, sort_keys=False)
 
 
 def run_write_final_results(cfg, inference_scores_file, monitor_report_file, submission_results_file):
   """
   write final results
   """
-
-  # todo:
-  # add macs and num params
   
   # your submission results init -> will be overwritten
   submission_result_dict = {
@@ -214,7 +200,7 @@ def run_write_final_results(cfg, inference_scores_file, monitor_report_file, sub
     submission_result_dict['embedded_ram_usage_bytes'] = monitor_report_dict['ram_bytes']['arena_total']
 
   # dump results
-  yaml.dump({'submission_results': submission_result_dict}, open(submission_results_file, 'w'))
+  yaml.dump({'submission_results': submission_result_dict}, open(submission_results_file, 'w'), default_flow_style=False, sort_keys=False)
   print("Submission results written to: {}".format(submission_results_file))
 
   return submission_result_dict
