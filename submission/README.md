@@ -128,7 +128,7 @@ python submission_test.py
 ```
 
 ## Submission Package Format
-Similar to the [biodcase submission webpage] (https://biodcase.github.io/challenge2026/submission) we require a `.zip` package with following structure:
+Similar to the [biodcase submission webpage](https://biodcase.github.io/challenge2026/submission) we require a `.zip` package with following structure:
 ```
 biodcase_2026_task3_submission_package.zip/
 ├── <your_lastname>_task1.technical_report.pdf
