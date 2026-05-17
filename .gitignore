@@ -2,6 +2,7 @@
 # gitignore biodcase tiny ml
 
 # ignore directory
+ignore/
 output/
 data/
 submission/reports

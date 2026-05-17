@@ -172,6 +172,7 @@ Once deployed, the benchmark code on the ESP32-S3 will display information about
 - `biodcase_tiny/embedded/firmware/main` - Firmware source code that will be copied and modified for the ESP target
 - `biodcase_tiny/embedded/esp_target.py` - ESP build target creation 
 - `biodcase_tiny/embedded/esp_toolchain.py` - ESP toolchain with Docker IDF to build, flash, and monitor
+- `submission/` - Guidelines and testing of your submission package
 
 ### Data Processing and Feature Extraction
 
@@ -330,15 +331,18 @@ and can be bought, for instance, [here](https://www.digikey.de/de/products/detai
 
 ## Rules and Submissions
 > <font color="red">**Note:**</font> <br>
-> We are still updating the submission rules to make it easy for you to submit your work and easy for us to evaluate your submission!
-> The final submission rules are to be expected by **mid of May**, so please stay up to date on this repository!
+> We are still updating the submission procedure to make it easy for you to submit your work and easy for us to evaluate your submission!
+> Wait for the submission at least **two weeks before the deadline of the challenge**. 
+> Submission scores are fixed, but we would like to create a submission test on the '.zip' submission package!
 
+We defined the rules and submission guidelines in the `./submission/README.md` file [here](submission/README.md).
 Generally, you will have to submit a .zip file that contains:
 1. Inference model
-2. (optional) .tflite model
-3. (alternative) Feature extraction algorithm that does not follow the baseline algorithm
-4. A YAML metadata file describing details of your submission
-5. Technical report
+2. (optional) Embedding model (tflite)
+3. (optional) Built embedded code (src)
+4. (alternative) Feature extraction algorithm that does not follow the baseline algorithm
+5. A YAML metadata file describing details of your submission
+6. Technical report
 
 Your solution will be evaluated on a hidden test set and the scores will be presented in the upcoming results section of the BioDCASE website.
 
