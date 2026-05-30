@@ -22,7 +22,7 @@ Please, also visit the [official BioDCASE 2026 Task 3 website](https://biodcase.
 - [Dataset](#dataset)
 - [Setup and Installation](#setup-and-installation)
 - [Development](#development)
-- [Rules and Submissions](#rules-and-submissions)
+- [Submission](#Submission)
 - [Limitations](#limitations)
 - [Support](#support)
 - [License](#license)
@@ -329,31 +329,31 @@ and can be bought, for instance, [here](https://www.digikey.de/de/products/detai
 5. **Docker Environment**: The toolchain uses Docker to provide a consistent ESP-IDF environment, making it easier to build on any host system.
 
 
-## Rules and Submissions
-> <font color="red">**Note:**</font> <br>
+## Submission
+<!-- > S="red">**ote:**</font> <br>
 > We are still updating the submission procedure to make it easy for you to submit your work and easy for us to evaluate your submission!
 > Wait for the submission at least **two weeks before the deadline of the challenge**. 
-> Submission scores are fixed, but we would like to create a submission test on the '.zip' submission package!
+> Submission scores are fixed, but we would like to create a submission test on the '.zip' submission package! -->
 
-We defined the rules and submission guidelines in the `./submission/README.md` file [here](submission/README.md).
-Generally, you will have to submit a .zip file that contains:
+Rules and guidelines for submission are defined in the `./submission/README.md` file [here](submission/README.md).
+In short, you will have to submit a .zip file containing:
 1. Inference model
 2. (optional) Embedding model (tflite)
 3. (optional) Built embedded code (src)
 4. (alternative) Feature extraction algorithm that does not follow the baseline algorithm
 5. A YAML metadata file describing details of your submission
-6. Technical report
+6. Technical report (.pdf)
 
-Your solution will be evaluated on a hidden test set and the scores will be presented in the upcoming results section of the BioDCASE website.
+Your solution will be evaluated on a hidden test set and the scores and technical reports will be presented in the upcoming results section of the BioDCASE website.
 
 ### Evaluation Metrics
 
 The BioDCASE-Tiny competition evaluates models based on multiple criteria on **Classification Performance** and **Resource Efficiency**:
 
-- **Top-1 Accuracy**: Accuracy of the highest predicted class to the target class. 
-- **ROC AUC**: Area Under the Receiver Operating Characteristic Curve.
+- **Top-1 Accuracy**: Accuracy of the highest predicted class to the target class
+- **ROC AUC**: Area Under the Receiver Operating Characteristic Curve
 - **Model Size**: `.tflite` model file size (KB)
-- **Inference Time**: Average time required for single audio classification, including feature extraction (ms)
+- **ESP32-S3 Processing Times**: Feature extraction, model, and total time for running the audio classification on the ESP32-S3 (on Korvo-2 dev board)
 - **Peak Memory Usage**: Maximum RAM usage during inference (KB)
 
 ### Ranking
