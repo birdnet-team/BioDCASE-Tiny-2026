@@ -191,16 +191,16 @@ todo: make this a bit prettier
         data-sortable="true" 
         data-chartable="true"
         data-value-type="float3"
-        data-axis-label="Model Size inf. [kB]">
-        Model Size [kB]
+        data-axis-label="Model Size inf. [Bytes]">
+        Model Size [Bytes]
       </th>
       <th class="text-center" 
         data-field="macs_inference" 
         data-sortable="true" 
         data-chartable="true"
         data-value-type="float3"
-        data-axis-label="MACs inf. [M ops.]">
-        MACs [M ops.]
+        data-axis-label="MACs inf.">
+        MACs
       </th>
       <!-- embedding model -->
       <th class="text-center" 
@@ -224,16 +224,16 @@ todo: make this a bit prettier
         data-sortable="true" 
         data-chartable="true"
         data-value-type="float3"
-        data-axis-label="Model Size tfl. [kB]">
-        Model Size [kB]
+        data-axis-label="Model Size tfl. [Bytes]">
+        Model Size [Bytes]
       </th>
       <th class="text-center" 
         data-field="macs_inference" 
         data-sortable="true" 
         data-chartable="true"
         data-value-type="float3"
-        data-axis-label="MACs inf. [M ops.]">
-        MACs [M ops.]
+        data-axis-label="MACs inf.">
+        MACs
       </th>
       <!-- Embedded Performance on ESP32-S3 -->
       <th class="text-center" 
@@ -241,8 +241,8 @@ todo: make this a bit prettier
         data-sortable="true" 
         data-chartable="true"
         data-value-type="float3"
-        data-axis-label="RAM Usage [kB]">
-        RAM Usage [kB]
+        data-axis-label="RAM Usage [Bytes]">
+        RAM Usage [Bytes]
       </th>
       <th class="text-center" 
         data-field="embedded_time_ms_setup" 
