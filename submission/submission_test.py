@@ -65,25 +65,25 @@ def run_inference(cfg, inference_scores_file, cm_plot_file):
 
   # add to score dict
   inference_score_dict['accuracy_inference'] = np.round(np.mean(y_targets == np.argmax(y_predictions_model, axis=-1)), decimals=4).item()
-  inference_score_dict['accuracy_tflite'] = np.round(np.mean(y_targets == np.argmax(y_predictions_tflite, axis=-1)), decimals=4).item()
+  inference_score_dict['accuracy_tflite'] = np.round(np.mean(y_targets == np.argmax(y_predictions_tflite, axis=-1)), decimals=4).item() if len(y_predictions_tflite) else 'N/A'
 
   # auc score
   inference_score_dict['roc_auc_inference'] = np.round(roc_auc_score(y_targets, softmax(y_predictions_model, axis=1), multi_class="ovr", average="macro"), decimals=4).item()
-  inference_score_dict['roc_auc_tflite'] = np.round(roc_auc_score(y_targets, softmax(y_predictions_tflite, axis=1), multi_class="ovr", average="macro"), decimals=4).item()
+  inference_score_dict['roc_auc_tflite'] = np.round(roc_auc_score(y_targets, softmax(y_predictions_tflite, axis=1), multi_class="ovr", average="macro"), decimals=4).item() if len(y_predictions_tflite) else 'N/A'
 
   # model size
   inference_score_dict['model_size_inference_bytes'] = inference_handler.get_model_size()
-  inference_score_dict['model_size_tflite_bytes'] = target_tflite_file.stat().st_size if target_tflite_file.is_file() else 'N/A'
+  inference_score_dict['model_size_tflite_bytes'] = (target_tflite_file.stat().st_size if target_tflite_file.is_file() else 'N/A') if not target_tflite_file is None else 'N/A'
 
   # info message
-  if not target_tflite_file.is_file(): print("***No tflite model, name must be same as the inference model but with .tflite as ending, e.g.: {}".format(target_tflite_file))
+  if not (target_tflite_file.is_file() if not target_tflite_file is None else False): print("***No tflite model, name must be same as the inference model but with .tflite as ending!".format(target_tflite_file))
 
   # info score
   print("\nInference results:")
   print("y_targets: ", y_targets)
   print("y_predictions_model argmax: ", np.argmax(y_predictions_model, axis=-1))
-  print("y_predictions_tflite argmax: ", np.argmax(y_predictions_tflite, axis=-1))
-  print("Accuracy inference: {:.4f}, tflite: {:.4f}".format(inference_score_dict['accuracy_inference'], inference_score_dict['accuracy_tflite']))
+  print("y_predictions_tflite argmax: ", np.argmax(y_predictions_tflite, axis=-1)) if len(y_predictions_tflite) else print("no tflite!")
+  print("Accuracy inference: {:.4f}, tflite: ".format(inference_score_dict['accuracy_inference']) + ("{:.4f}".format(inference_score_dict['accuracy_tflite']) if inference_score_dict['accuracy_tflite'] != 'N/A' else 'N/A'))
 
   # macs
   inference_score_dict['macs_inference'] = inference_handler.get_macs_model()
@@ -161,9 +161,9 @@ def run_write_final_results(cfg, inference_scores_file, monitor_report_file, sub
   # your submission results init -> will be overwritten
   submission_result_dict = {
     'accuracy_inference': 0.0,
-    'accuracy_tflite': 0.0,
+    'accuracy_tflite': 'N/A',
     'roc_auc_inference': 0.0,
-    'roc_auc_tflite': 0.0,
+    'roc_auc_tflite': 'N/A',
     'model_size_inference_bytes': 'N/A',
     'model_size_tflite_bytes': 'N/A',
     'macs_inference': 'N/A',
