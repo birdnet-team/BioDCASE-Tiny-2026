@@ -39,6 +39,7 @@ from submission.rank_submissions.convert_csv_to_yaml import convert_csv_to_yaml
 SUBMISSIONS_DIR = Path("/mnt/c/Users/saphi/Desktop/dummy_submissions")
 RESULT_FILE = Path("./submission/rank_submissions/eval_results.csv")
 VERBOSE_SUBPROCESS = True  # set to False to suppress live output from submission_test.py
+TEST_FILES_DIR = None #Path("/path/to/folder") for custom folder, #None for keeping path from config_submission.yaml
 
 # Folder and files that should NOT be copied to the temp folder to save time.
 # The placeholder model files below are excluded so the contestant's model is always used.
@@ -261,6 +262,27 @@ def _run_subprocess(cmd, cwd, timeout):
         return -1, "".join(output_lines), True
 
 
+def _patch_test_file_dir(temp_path):
+    """
+    If TEST_FILES_DIR is set, overwrite the test_file_dir value in the
+    config_submission.yaml inside the temp clone so the evaluation runs
+    against the specified dataset instead of the contestant's own path.
+    """
+    if TEST_FILES_DIR is None:
+        return
+
+    config_path = temp_path / "submission" / "config_submission.yaml"
+
+    if not config_path.is_file():
+        print(f"  [WARN] config_submission.yaml not found at '{config_path}', cannot patch test_file_dir.")
+        return
+
+    cfg = yaml.safe_load(config_path.read_text())
+    cfg["test_file_dir"] = str(TEST_FILES_DIR)
+    config_path.write_text(yaml.dump(cfg, default_flow_style=False, sort_keys=False))
+    print(f"  [PATCHED] test_file_dir set to '{TEST_FILES_DIR}' in config_submission.yaml")
+
+
 def evaluation_process(zip_path, task3_folder, template_dir, python_executable):
     """
     Copies the current project version to a temp folder, extracts one task3 submission on top
@@ -288,6 +310,9 @@ def evaluation_process(zip_path, task3_folder, template_dir, python_executable):
             _extract_submission_files(zip_path, temp_path, task3_folder)
         except Exception as e:
             return f"ERROR: Defektes Zip-Archiv ({str(e)})", None
+
+        # overwrite test_file_dir in the extracted config_submission.yaml if TEST_FILES_DIR is set
+        _patch_test_file_dir(temp_path)
 
         # start evaluation
         # use python executable from the original environment to ensure all dependencies are available
