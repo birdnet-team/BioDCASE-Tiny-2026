@@ -7,6 +7,9 @@ output/
 data/
 submission/reports
 submission/your_generated_code/src
+submission/example_submission_packages
+submission/rank_submissions/eval_results.csv
+submission/rank_submissions/results_task3_entries.yaml
 
 # virtual env
 .venv
