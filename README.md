@@ -446,6 +446,6 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
 
 
 ## Acknowledgement
-- C.W. was supported by the University of Veterinary Medicine, Vienna.
-- Y.B. was supported by the EU MSCA Doctoral Network Bioacoustic AI (BioacAI, 101071532).
+- C.W. was supported by the University of Veterinary Medicine, Vienna
+- Y.B. was supported by the EU MSCA Doctoral Network Bioacoustic AI (BioacAI, 101071532)
 - T.S. and S.K. were supported by Chemnitz University of Technology
