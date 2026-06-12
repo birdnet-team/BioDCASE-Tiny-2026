@@ -227,7 +227,7 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
 
     ShowInputCRC32(audio_win);
     auto model_input = interpreter.input(0);
-    auto n_windows = model_input->dims->data[1];
+    auto n_windows = model_input->dims->data[2];
     extract_features(audio_win, scratch_buffer, out_buffer, fc, &profiler, n_windows);
     MicroPrintf("");
     auto total_ticks = profiler.LogTicksPerTagCsv();

@@ -15,7 +15,7 @@ numpy
 numba
 pandas
 scipy
-sklearn
+scikit-learn
 tdqm
 tensorflow
 pyarrow

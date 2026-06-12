@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from biodcase_tiny.embedded.esp_target import ESPTarget
-from biodcase_tiny.embedded.esp_toolchain import ESPToolchain
+from biodcase_tiny.embedded.esp_toolchain_idf import ESPToolchain
 from biodcase_tiny.feature_extraction.feature_extraction import make_constants
 
 
@@ -58,6 +58,7 @@ def run_compile_embedded_src_code(cfg):
 
   # toolchain: compile, flash, and monitor
   toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])
+  toolchain.setup()
   #toolchain.set_target(src_path=src_path)
   toolchain.compile(src_path=src_path)
 
@@ -75,5 +76,7 @@ def run_deploy_embedded_compiled_code(cfg, report_file_path=None):
 
   # toolchain: flash, and monitor
   toolchain = ESPToolchain(cfg['generate_embedded_code']['serial_device'])
+
+  toolchain.setup()
   toolchain.flash(src_path=src_path)
   toolchain.monitor(src_path=src_path, report_file_path=report_file_path)

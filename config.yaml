@@ -16,10 +16,10 @@ datamodule:
 
   # feature extraction -> stored as cache
   feature_extraction:
-    window_len: 4096
-    window_stride: 512
+    window_len: 128
+    window_stride: 410
     window_scaling_bits: 12
-    mel_n_channels: 40
+    mel_n_channels: 32
     mel_low_hz: 125
     mel_high_hz: 7500
     mel_post_scaling_bits: 6
@@ -61,15 +61,15 @@ datamodule:
     filter_files: {'is_used': False, 're_contains': '.*'}
 
   # folder structure, splits
-  train_folder: 'Train'
-  validation_folder: 'Validation'
-  test_folder: 'Validation'
+  train_folder: 'train'
+  validation_folder: 'val'
+  test_folder: 'val'
 
   # load set on init, must be either 'train', 'validation', 'test'
   load_set_on_init: Null
 
   # other flags
-  redo_all: False
+  redo_all: True
   redo_intermediate: False
   redo_cache: False
   verbose: False
@@ -111,7 +111,7 @@ tensorflow_framework:
   # model training - tensorflow
   model_training:
     seed: 42
-    n_epochs: 100
+    n_epochs: 1
     shuffle_buff_n: 10000
     batch_size: 32
     early_stopping:
@@ -129,7 +129,7 @@ generate_embedded_code:
   gen_code_source_folder_name: 'src'
 
   # replace with your serial device
-  serial_device: '/dev/ttyUSB0'
+  serial_device: '/dev/tty.usbserial-1120'
 
   # quantize
   quantize: True
@@ -157,10 +157,10 @@ inference_handler_pytorch:
     args: []
     kwargs: 
       target_sample_rate: 24000
-      window_len: 4096
-      window_stride: 512
+      window_len: 512
+      window_stride: 410
       window_scaling_bits: 12
-      mel_n_channels: 40
+      mel_n_channels: 32
       mel_low_hz: 125
       mel_high_hz: 7500
       mel_post_scaling_bits: 6
@@ -197,10 +197,10 @@ inference_handler_tensorflow:
     args: []
     kwargs: 
       target_sample_rate: 24000
-      window_len: 4096
-      window_stride: 512
+      window_len: 512
+      window_stride: 410
       window_scaling_bits: 12
-      mel_n_channels: 40
+      mel_n_channels: 32
       mel_low_hz: 125
       mel_high_hz: 7500
       mel_post_scaling_bits: 6

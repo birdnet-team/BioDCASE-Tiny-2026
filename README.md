@@ -84,6 +84,12 @@ docker run hello-world
 
 6. (alternatively) install the [ESP-IDF](https://github.com/espressif/esp-idf) framework on your local PC and compile the code using `idf.py` commands. You have to have a look into the code of the repository and figure out which docker commands are used for building and deploying the code.
 
+- Replace `idf_path` in the `ESPToolchain` init function with your local IDF path
+- Run the `export.sh` script **before** activating the virtual environment:
+`. <your-IDF-PATH>/export.sh`
+- Activate the virtual environement:
+`source .venv/bin/activate`
+
 ### Configuration
 
 1. Move the downloaded dataset to any location on your PC, for instance, `/path/to/your/downloaded/dataset/` and edit `config.yaml` file at following location (the path can also be relative to the path you start the script):

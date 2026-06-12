@@ -7,32 +7,29 @@ import tensorflow as tf
 
 from pipeline_tensorflow.paths import TENSORBOARD_LOGS_PATH
 
-def create_model(input_shape, num_output_classes, n_filters_1=32, dropout=0.05) -> Model:
+
+def create_model(input_shape, num_output_classes, n_filters_1=16, dropout=0.05) -> Model:
   """
   create model
   """
 
-  # input
-  inputs = layers.Input(shape=input_shape)
+  input_layer = tf.keras.layers.Input(shape=input_shape)
+  conv1d_1 =    tf.keras.layers.Conv2D(filters=8, kernel_size=7, strides=(1,4), activation='relu')(input_layer)
+  output_main = tf.keras.layers.MaxPooling2D(pool_size=2) (conv1d_1)
 
-  x = layers.Conv2D(filters=n_filters_1, kernel_size=3, activation='relu')(inputs)
-  x = layers.MaxPooling2D(pool_size=2)(x)
+  output_main = tf.keras.layers.Conv2D(filters=32, kernel_size=3, activation='relu') (output_main)
+  output_main = tf.keras.layers.MaxPooling2D(pool_size=2) (output_main)
 
-  x = layers.Conv2D(filters=n_filters_1*2, kernel_size=3, activation='relu')(x)
-  x = layers.MaxPooling2D(pool_size=4)(x)
+  output_main = tf.keras.layers.Conv2D(filters=64, kernel_size=3, activation='relu') (output_main)
+  #output_main = tf.keras.layers.MaxPooling2D(pool_size=2) (output_main)
 
-  x = layers.Conv2D(filters=n_filters_1*4, kernel_size=3, activation='relu')(x)
-  x = layers.GlobalAveragePooling2D()(x)
+  output_main = tf.keras.layers.GlobalAveragePooling2D()(output_main)
+  #output_main = tf.keras.Dropout(0.02, name="dropout1")(output_main)
+  output_main = tf.keras.layers.Dense(units=128, activation='relu') (output_main)
+  output_main = tf.keras.layers.Dense(units=num_output_classes, activation='softmax', name='output_main') (output_main)
 
-  x = layers.Dropout(dropout, name="dropout1")(x)
-  x = layers.Dense(32, activation='relu')(x)
-
-  # output
-  x = layers.Dense(num_output_classes)(x)
-  outputs = layers.Softmax()(x)
-
-  # model
-  model = Model(inputs, outputs, name="cnn_baseline")
+  model = tf.keras.models.Model(inputs=input_layer, outputs=output_main)
+  
   model.compile(
     optimizer=optimizers.Adam(learning_rate=1e-3),
     loss=losses.CategoricalCrossentropy(),
