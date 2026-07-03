@@ -145,8 +145,10 @@ def _extract_submission_files(zip_path, temp_path, task3_folder):
       in the temp clone, regardless of what is already there.
     - All other files -> search the template tree for a file with the same name and
       overwrite it in place (handles config_submission.yaml, feature_handler.py, etc.).
-    - If no match is found in the template -> place at temp root so relative imports work
-      (handles new custom modules added by the contestant).
+    - If no match is found in the template -> place the file preserving its relative
+      folder structure from the zip. Files directly in the task folder land at temp root;
+      files inside subfolders are placed into that subfolder, creating it if necessary 
+      and keeping existing content intact.
 
     Blocklist (ZIP_EXTRACTION_BLOCKLIST_FILES / ZIP_EXTRACTION_BLOCKLIST_FOLDERS):
     - Any file whose name is in ZIP_EXTRACTION_BLOCKLIST_FILES is silently skipped.
@@ -199,9 +201,15 @@ def _extract_submission_files(zip_path, temp_path, task3_folder):
                 for existing_path in template_index[filename]:
                     existing_path.write_bytes(file_bytes)
 
-            # rule 3: new file not in template -> place at temp root
+            # rule 3: new file not in template -> place it preserving its relative folder
+            # structure from the zip. A file submitted directly in the task folder root
+            # (e.g. custom_module.py) still lands at temp root, while a file submitted inside
+            # a subfolder is placed into that subfolder. Existing template folders are kept 
+            # intact (only the file is added);
+            # completely new folders are created as needed.
             else:
-                dest = temp_path / filename
+                dest = temp_path / relative_file_path
+                dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(file_bytes)
 
 
