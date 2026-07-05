@@ -132,24 +132,16 @@ todo: make this a bit prettier
   -->
   <thead>
     <tr>
-      <!-- <th></th> -->
-      <th class="sep-left-cell" colspan="1"></th>
-      <th class="sep-left-cell text-center" colspan="2">Submission information</th>
-      <!-- <th class="sep-left-cell text-center" colspan="2">Ranking</th> -->
+      <th class="text-center" colspan="1"></th>
+      <th class="sep-left-cell text-center" colspan="4">Submission information</th>
       <th class="sep-left-cell text-center" colspan="4">Inference Model</th>
       <th class="sep-left-cell text-center" colspan="4">Embedding Model (.tflite)</th>
       <th class="sep-left-cell text-center" colspan="5">Embedded Performance on ESP32-S3)</th>
       <th class="sep-left-cell" colspan="1"></th>
-      <!--       
-      <th class="sep-left-cell text-center" colspan="4">Classification Performance</th>
-      <th class="sep-left-cell text-center" colspan="4">Resource Efficiency</th>
-      <th class="sep-left-cell text-center" colspan="5">Embedding Performance</th>
-      -->
     </tr>
     <tr>
-      <!-- <th class="sep-right-cell" data-rank="true">Rank</th> -->
       <!-- rank -->
-      <th class="sep-left-cell text-center" 
+      <th class="text-center" 
           data-field="rank_team" 
           data-sortable="true" 
           data-chartable="true"
@@ -158,10 +150,19 @@ todo: make this a bit prettier
           Rank
       </th>
       <!-- submission information -->
-      <th class="sm-cell"
+      <th class="sep-left-cell" 
         data-field="name"
         data-sortable="true">
-        Name
+        Solution Label
+      </th>
+      <th data-field="abbreviation"
+        data-sortable="true">
+        Abbreviation
+      </th>
+      <th class="sm-cell"
+        data-field="name_long"
+        data-sortable="true">
+        Solution Full Name
       </th>
       <th class="text-center" 
         data-field="bibtex_key" 
@@ -170,7 +171,7 @@ todo: make this a bit prettier
         Technical<br></br>Report
       </th>
       <!-- inference model -->
-      <th class="text-center" 
+      <th class="sep-left-cell text-center" 
         data-field="accuracy_inference" 
         data-sortable="true" 
         data-chartable="true"
@@ -190,7 +191,7 @@ todo: make this a bit prettier
         data-field="model_size_inference_bytes" 
         data-sortable="true" 
         data-chartable="true"
-        data-value-type="float3"
+        data-value-type="int"
         data-axis-label="Model Size inf. [Bytes]">
         Model Size [Bytes]
       </th>
@@ -198,12 +199,12 @@ todo: make this a bit prettier
         data-field="macs_inference" 
         data-sortable="true" 
         data-chartable="true"
-        data-value-type="float3"
+        data-value-type="int"
         data-axis-label="MACs inf.">
         MACs
       </th>
       <!-- embedding model -->
-      <th class="text-center" 
+      <th class="sep-left-cell text-center" 
         data-field="accuracy_inference" 
         data-sortable="true" 
         data-chartable="true"
@@ -223,7 +224,7 @@ todo: make this a bit prettier
         data-field="model_size_inference_bytes" 
         data-sortable="true" 
         data-chartable="true"
-        data-value-type="float3"
+        data-value-type="int"
         data-axis-label="Model Size tfl. [Bytes]">
         Model Size [Bytes]
       </th>
@@ -231,16 +232,16 @@ todo: make this a bit prettier
         data-field="macs_inference" 
         data-sortable="true" 
         data-chartable="true"
-        data-value-type="float3"
+        data-value-type="int"
         data-axis-label="MACs inf.">
         MACs
       </th>
       <!-- Embedded Performance on ESP32-S3 -->
-      <th class="text-center" 
+      <th class="sep-left-cell text-center" 
         data-field="embedded_ram_usage_bytes" 
         data-sortable="true" 
         data-chartable="true"
-        data-value-type="float3"
+        data-value-type="int"
         data-axis-label="RAM Usage [Bytes]">
         RAM Usage [Bytes]
       </th>

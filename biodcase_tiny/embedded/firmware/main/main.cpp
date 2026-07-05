@@ -226,8 +226,22 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
     SetRandomInput(seed, interpreter);
 
     ShowInputCRC32(audio_win);
+
+    // model input
     auto model_input = interpreter.input(0);
-    auto n_windows = model_input->dims->data[1];
+
+    // n window frames @ last dim
+    auto n_windows = model_input->dims->data[sizeof(model_input->dims) - 1];
+
+    // info input dims
+    MicroPrintf("input dim with num: %d", sizeof(model_input->dims));
+    for (int i = 0; i < sizeof(model_input->dims); i++)
+    {
+      MicroPrintf("dim@[%d]: %d", i, model_input->dims->data[i]);
+    }
+    MicroPrintf("n_windows = %d", n_windows);
+
+    // feature extraction
     extract_features(audio_win, scratch_buffer, out_buffer, fc, &profiler, n_windows);
     MicroPrintf("");
     auto total_ticks = profiler.LogTicksPerTagCsv();

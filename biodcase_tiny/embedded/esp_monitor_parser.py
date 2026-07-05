@@ -177,6 +177,7 @@ def parse_monitor_output(lines: list[str], report_file_path=None) -> dict:
         "estimated_macs": None,
         "timing_us": {
             "setup": None,
+            "preprocessing_single_frame": None,
             "preprocessing": None,
             "inference": None,
             "total": None,
@@ -212,11 +213,17 @@ def parse_monitor_output(lines: list[str], report_file_path=None) -> dict:
                 if timing_block_index == 1:
                     report["timing_us"]["setup"] = us
                 elif timing_block_index == 2:
-                    report["timing_us"]["preprocessing"] = us
+                    report["timing_us"]["preprocessing_single_frame"] = us
                 elif timing_block_index == 3:
                     report["timing_us"]["inference"] = us
                 in_timing_block = False
                 continue
+
+        # preprocessing time on all windows
+        m = re.match(r'Total \* n_windows =\s*(\d+)', line)
+        if m: 
+            report["timing_us"]["preprocessing"] = int(m.group(1))
+            continue
 
         # CRC32 checksums
         m = re.match(r"Audio Input CRC32:\s*(0x[0-9A-Fa-f]+)", line)
