@@ -14,11 +14,11 @@ submission_results:
   macs_tflite: 23315232
   num_params_inference: 97163
   num_params_tflite: 96896
-  embedded_time_ms_setup: 4.46
-  embedded_time_ms_preprocessing: 3.02
-  embedded_time_ms_model: 1484.87
-  embedded_time_ms_total: 1492.35
-  embedded_ram_usage_bytes: 202540
+  embedded_time_ms_setup: 4.44
+  embedded_time_ms_preprocessing: 3.11
+  embedded_time_ms_model: 330.36
+  embedded_time_ms_total: 337.9
+  embedded_ram_usage_bytes: 202556
 
 # tensorflow framework
 submission_results:
@@ -32,8 +32,8 @@ submission_results:
   macs_tflite: 23315232
   num_params_inference: 97163
   num_params_tflite: 96896
-  embedded_time_ms_setup: 4.42
+  embedded_time_ms_setup: 4.44
   embedded_time_ms_preprocessing: 3.1
-  embedded_time_ms_model: 1850.09
-  embedded_time_ms_total: 1857.62
+  embedded_time_ms_model: 330.36
+  embedded_time_ms_total: 337.9
   embedded_ram_usage_bytes: 202556

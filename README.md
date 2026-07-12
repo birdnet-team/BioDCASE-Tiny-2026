@@ -22,7 +22,7 @@ Please, also visit the [official BioDCASE 2026 Task 3 website](https://biodcase.
 - [Dataset](#dataset)
 - [Setup and Installation](#setup-and-installation)
 - [Development](#development)
-- [Submission](#Submission)
+- [Submission](#submission)
 - [Limitations](#limitations)
 - [Support](#support)
 - [License](#license)
@@ -222,6 +222,7 @@ python datamodule.py
 The model training is started either by `biodcase2026_tiny_ml_pytorch.py` or `biodcase2026_tiny_ml_tensorflow.py` depending on your framework of choice.
 
 #### Pytorch Framework
+
 When choosing the pytorch framework, the model files are located in `./pipeline_pytorch`.
 The model training process is managed in `model_training.py` where the training/validation steps are defined in `model_base.py` by the `ModelBase` class.
 The model architecture can be customized in `model_tiny_ml.py` by overwriting any function you wish to change.
@@ -253,6 +254,7 @@ The dataloader kwargs are useful for setting the batch size in training.
 In the `model` entry, the `module` is the python package (or file), `attr` the function (in this case the model class), and `args` and `kwargs` are passed to this model class.
 
 #### Tensorflow Framework
+
 When choosing the pytorch framework, the model files are located in `./pipeline_tensorflow`.
 The model training process is managed in `model_training.py` where [Keras](https://keras.io/) model creation and training step is defined in `model.py`.
 This framework was adapted from previous year's [BioDCASE 2025 competition](https://github.com/birdnet-team/BioDCASE-Tiny-2025).
@@ -269,17 +271,14 @@ tensorflow_framework:
 ```
 
 ### Model Evaluation
+
 Evaluate all models that were already trained and saved in `./output/03_models/` on classification performance with:
 ```bash
 python model_evaluation.py
 ```
 The resource efficiency from the `.tflite` models is not evaluated but can be found in the report directories `output/04_reports/` as `monitor_report.yaml` file which is saved after training and deployment.
 
-
 ### ESP32-S3 Build and Deployment
-
-<!-- To deploy your model to the ESP32-S3-Korvo-2 board, you'll use the built-in deployment tools that handle model conversion, code generation, and flashing. 
-The deployment process: -->
 
 Our model build and deployment procedure to the ESP32-S3-Korvo-2 development board follows following three main steps:
 1. Build target creation
@@ -319,7 +318,6 @@ and can be bought, for instance, [here](https://www.digikey.de/de/products/detai
   <br><br>
 </div>
 
-
 ### Development Tips
 
 1. **Feature Extraction Parameters**: Carefully tune the feature extraction parameters in `config.yaml`.
@@ -330,10 +328,6 @@ and can be bought, for instance, [here](https://www.digikey.de/de/products/detai
 
 
 ## Submission
-<!-- > S="red">**ote:**</font> <br>
-> We are still updating the submission procedure to make it easy for you to submit your work and easy for us to evaluate your submission!
-> Wait for the submission at least **two weeks before the deadline of the challenge**. 
-> Submission scores are fixed, but we would like to create a submission test on the '.zip' submission package! -->
 
 Rules and guidelines for submission are defined in the `./submission/README.md` file [here](submission/README.md).
 In short, you will have to submit a .zip file containing:
@@ -357,7 +351,49 @@ The BioDCASE-Tiny competition evaluates models based on multiple criteria on **C
 - **Peak Memory Usage**: Maximum RAM usage during inference (KB)
 
 ### Ranking
+
 Participants will be ranked according to all evaluation metrics.
+
+### Baseline Results
+
+The following table shows our baseline results on the pytorch framework evaluated on the validation dataset:
+<table align="center">
+  <tr>
+    <th colspan=4> Inference Model </th>
+    <th colspan=4> Embedding Model </th>
+    <th colspan=5> Embedded Performance on ESP32-S3 </th>
+  </tr>
+  <tr>
+    <th> ACC </th>
+    <th> ROC AUC </th>
+    <th> Size [Bytes] </th>
+    <th> MACs </th>
+    <th> ACC </th>
+    <th> ROC AUC </th>
+    <th> Size [Bytes] </th>
+    <th> MACs </th>
+    <th> Time Setup [ms]</th>
+    <th> Time Preprocessing [ms]</th>
+    <th> Time Model [ms]</th>
+    <th> Time Total [ms]</th>
+    <th> RAM Usage [Bytes]</td>
+  </tr>
+  <tr>
+    <th> 0.5647 </th>
+    <th> 0.8921 </th>
+    <th> 393109 </th>
+    <th> 23326923 </th>
+    <th> 0.5628 </th>
+    <th> 0.8923 </th>
+    <th> 111408 </th>
+    <th> 23315232 </th>
+    <th> 4.44 </th>
+    <th> 3.11 </th>
+    <th> 330.36 </th>
+    <th> 337.9 </th>
+    <th> 202556 </th>
+  </tr>
+</table>
 
 
 ## Limitations
@@ -410,6 +446,6 @@ If you use the BioDCASE-Tiny framework or dataset in your research, please cite 
 
 
 ## Acknowledgement
-- C.W. was supported by the University of Veterinary Medicine, Vienna.
-- Y.B. was supported by the EU MSCA Doctoral Network Bioacoustic AI (BioacAI, 101071532).
+- C.W. was supported by the University of Veterinary Medicine, Vienna
+- Y.B. was supported by the EU MSCA Doctoral Network Bioacoustic AI (BioacAI, 101071532)
 - T.S. and S.K. were supported by Chemnitz University of Technology

@@ -226,8 +226,6 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
     SetRandomInput(seed, interpreter);
 
     ShowInputCRC32(audio_win);
-
-    // model input
     auto model_input = interpreter.input(0);
 
     // n window frames @ last dim
