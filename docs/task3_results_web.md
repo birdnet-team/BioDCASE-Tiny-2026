@@ -48,7 +48,7 @@ todo: make this a bit prettier
 # Teams ranking
 <table class="datatable table table-hover table-condensed"
   data-yaml="content/data/challenge2026/results_task3_entries.yaml"
-  data-id-field="code"
+  data-id-field="name"
   data-sort-name="rank_team"
   data-sort-order="asc"
   data-pagination="true"

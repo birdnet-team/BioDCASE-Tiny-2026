@@ -579,11 +579,21 @@ class DatamoduleTinyMl():
     return self.get_file_names_by_single_sid(sid)[0]
 
 
-  def get_raw_waveform_and_fs_by_single_sid(self, sid):
+  def get_raw_waveform_and_fs_by_single_sid(self, sid, normalize=True):
     """
     waveform data of origin file
     """
-    return soundfile.read(self.get_raw_waveform_file_by_single_sid(sid))
+
+    # read waveform file
+    x, fs = soundfile.read(self.get_raw_waveform_file_by_single_sid(sid))
+
+    # no nomalization
+    if not normalize: return x, fs
+
+    # [-1, 1]
+    x = x / np.max(np.abs(x)) * 0.5
+
+    return x, fs
 
 
   def get_cache_info_spec_fs(self):

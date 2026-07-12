@@ -193,11 +193,11 @@ def run_write_final_results(cfg, inference_scores_file, monitor_report_file, sub
     monitor_report_dict = yaml.safe_load(open(monitor_report_file, 'r'))
 
     # change
-    submission_result_dict['embedded_time_ms_setup'] = round(monitor_report_dict['timing_us']['setup'] / 1000, 2)
-    submission_result_dict['embedded_time_ms_preprocessing'] = round(monitor_report_dict['timing_us']['preprocessing'] / 1000, 2)
-    submission_result_dict['embedded_time_ms_model'] = round(monitor_report_dict['timing_us']['inference'] / 1000, 2)
-    submission_result_dict['embedded_time_ms_total'] = round(monitor_report_dict['timing_us']['total'] / 1000, 2)
-    submission_result_dict['embedded_ram_usage_bytes'] = monitor_report_dict['ram_bytes']['arena_total']
+    submission_result_dict['embedded_time_ms_setup'] = round(monitor_report_dict['timing_us']['setup'] / 1000, 2) if monitor_report_dict['timing_us']['setup'] is not None else 'N/A'
+    submission_result_dict['embedded_time_ms_preprocessing'] = round(monitor_report_dict['timing_us']['preprocessing'] / 1000, 2) if monitor_report_dict['timing_us']['preprocessing'] is not None else 'N/A'
+    submission_result_dict['embedded_time_ms_model'] = round(monitor_report_dict['timing_us']['inference'] / 1000, 2) if monitor_report_dict['timing_us']['inference'] is not None else 'N/A'
+    submission_result_dict['embedded_time_ms_total'] = round(monitor_report_dict['timing_us']['total'] / 1000, 2) if monitor_report_dict['timing_us']['total'] is not None else 'N/A'
+    submission_result_dict['embedded_ram_usage_bytes'] = monitor_report_dict['ram_bytes']['arena_total'] if monitor_report_dict['ram_bytes']['arena_total'] is not None else 'N/A'
 
   # dump results
   yaml.dump({'submission_results': submission_result_dict}, open(submission_results_file, 'w'), default_flow_style=False, sort_keys=False)

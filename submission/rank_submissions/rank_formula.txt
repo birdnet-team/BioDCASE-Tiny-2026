@@ -1,0 +1,12 @@
+rank_score = 
+(accuracy_inference - 0.56) / (1 - 0.56) +
+(accuracy_tflite - 0.56) / (1 - 0.56) * 2 +
+(roc_auc_inference - 0.89) / (0.97 - 0.89) * 0.5 + 
+(roc_auc_tflite - 0.89) / (0.97 - 0.89) * 0.5 + 
+(4755032 - model_size_tflite_bytes) / (4755032 - 42232) * 0.5 + 
+MAX((267313754 - macs_inference) / (267313754 - 23326923), 0) * 0.3 + 
+MAX((567313754- macs_tflite) / (567313754 - 3911888), 0) * 0.5 + 
+MAX((477.46 - embedded_time_ms_preprocessing) / (477.46 - 241.12), 0) * 0.3 +
+MAX((2000 - embedded_time_ms_model) / (2000 - 287.53), 0) * 0.4 +
+MAX((2000 - embedded_time_ms_total) / (2000 - 287.53), 0) * 0.5 +
+MAX((1000000 - embedded_ram_usage_bytes) / (1000000 - 95900), 0) * 0.5
