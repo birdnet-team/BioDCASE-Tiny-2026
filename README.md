@@ -396,6 +396,11 @@ The following table shows our baseline results on the pytorch framework evaluate
 </table>
 
 
+### Challenge Results
+The challenge results are now available at the [BioDCASE2026 Task3 - results webpage](https://biodcase.github.io/challenge2026/task3-results).
+We thank each participant for joining the challenge and contributing research in tiny machine learning for bird sound recognition.
+
+
 ## Limitations
 This framework does not yet use real microphone data from the Korvo-2 dev board!
 Instead, it runs a profiler to evaluate the model and feature extraction in size and time consumption.

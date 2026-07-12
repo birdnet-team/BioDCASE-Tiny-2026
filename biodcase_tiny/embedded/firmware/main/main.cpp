@@ -228,6 +228,7 @@ void ShowInputCRC32(tflite::MicroInterpreter* interpreter) {
     ShowInputCRC32(audio_win);
     auto model_input = interpreter.input(0);
 
+    // todo: make this also work for tf model (swapped dimensions)
     // n window frames @ last dim
     auto n_windows = model_input->dims->data[sizeof(model_input->dims) - 1];
 
