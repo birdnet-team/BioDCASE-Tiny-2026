@@ -387,11 +387,11 @@ The following table shows our baseline results on the pytorch framework evaluate
     <th> 0.8923 </th>
     <th> 111408 </th>
     <th> 23315232 </th>
-    <th> 4.44 </th>
-    <th> 3.11 </th>
-    <th> 330.36 </th>
-    <th> 337.9 </th>
-    <th> 202556 </th>
+    <th> 4.48 </th>
+    <th> 401.13 </th>
+    <th> 1484.52 </th>
+    <th> 1890.13 </th>
+    <th> 202540 </th>
   </tr>
 </table>
 

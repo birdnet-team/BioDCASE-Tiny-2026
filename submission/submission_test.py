@@ -206,6 +206,27 @@ def run_write_final_results(cfg, inference_scores_file, monitor_report_file, sub
   return submission_result_dict
 
 
+def remove_folder_and_its_content(target_path: Path):
+  """
+  remove folder and its content
+  """
+
+  # folder must exist
+  if not target_path.is_dir(): return
+
+  # remove
+  for ch in target_path.iterdir():
+    
+    # remove file
+    if ch.is_file(): ch.unlink()
+
+    # iterative remove
+    else: remove_folder_and_its_content(ch)
+
+  # finally remove dir
+  target_path.rmdir()
+
+
 if __name__ == '__main__':
   """
   submission test
@@ -231,9 +252,14 @@ if __name__ == '__main__':
   inference_scores_file = report_dir / 'inference_scores.yaml'
   monitor_report_file = report_dir / 'monitor_report.yaml'
   cm_plot_file = report_dir / 'cm_inference.png'
+  scr_folder = report_dir / 'src'
 
   # remove previous generated files
   [(print("remove: ", f.name), f.unlink()) for f in [submission_results_file, inference_scores_file, monitor_report_file, cm_plot_file] if f.is_file()]
+
+  # remove src folder
+  remove_folder_and_its_content(scr_folder)
+  print("remove: ", scr_folder.name)
 
   # inference
   tflite_path = run_inference(cfg, inference_scores_file, cm_plot_file)
